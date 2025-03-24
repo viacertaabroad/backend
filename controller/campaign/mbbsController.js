@@ -36,25 +36,25 @@ const newMBBS_InterestedUser = async (req, res) => {
       timeZone: "Asia/Kolkata",
     });
 
-    await addToSheet(
-      "mbbs",
-      [
-        name,
-        mobile,
-        email,
-        qualification,
-        selectedCountry.join(","),
-        currentDate,
-      ],
-      [
-        "Name",
-        "Mobile",
-        "Email",
-        "Qualification",
-        "Selected Country",
-        "Timestamp",
-      ]
-    );
+    // await addToSheet(
+    //   "mbbs",
+    //   [
+    //     name,
+    //     mobile,
+    //     email,
+    //     qualification,
+    //     selectedCountry.join(","),
+    //     currentDate,
+    //   ],
+    //   [
+    //     "Name",
+    //     "Mobile",
+    //     "Email",
+    //     "Qualification",
+    //     "Selected Country",
+    //     "Timestamp",
+    //   ]
+    // );
     res.status(201).json({
       success: true,
       message: "Entry created successfully",

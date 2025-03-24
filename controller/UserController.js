@@ -34,14 +34,14 @@ const signUp = async (req, res) => {
       existingUser.role = role;
       existingUser.password = await bcrypt.hash(
         password,
-        process.env.HASH_ROUND
+        Number(process.env.HASH_ROUND)
       );
     } else {
       existingUser = new User({
         name,
         email,
         mobile,
-        password: await bcrypt.hash(password, HASH_ROUND),
+        password: await bcrypt.hash(password, Number(process.env.HASH_ROUND)),
         address,
         role,
         isVerified: false,
@@ -50,7 +50,7 @@ const signUp = async (req, res) => {
 
     const otp = crypto.randomInt(1000, 9999).toString();
     const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
-    existingUser.otp = await bcrypt.hash(otp, HASH_ROUND);
+    existingUser.otp = await bcrypt.hash(otp, Number(process.env.HASH_ROUND));
     existingUser.otpExpiry = otpExpiry;
     existingUser.deleteAt = new Date(otpExpiry);
     // existingUser.deleteAt = new Date(otpExpiry) + 30 * 1000; //added 30 sec
@@ -370,7 +370,7 @@ const updatePassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(
       newPassword,
-      process.env.HASH_ROUND
+      Number(process.env.HASH_ROUND)
     );
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
@@ -417,7 +417,7 @@ const forgotPassword = async (req, res) => {
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
-    const hashedOtp = await bcrypt.hash(otp, process.env.HASH_ROUND);
+    const hashedOtp = await bcrypt.hash(otp, Number(process.env.HASH_ROUND));
     user.otp = hashedOtp;
     user.otpExpiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
     await user.save();
@@ -472,7 +472,7 @@ const resetPassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(
       newPassword,
-      process.env.HASH_ROUND
+      Number(process.env.HASH_ROUND)
     );
     user.password = hashedPassword;
     user.otp = null;

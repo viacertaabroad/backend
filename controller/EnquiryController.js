@@ -24,13 +24,15 @@ const createEnquiry = async (req, res) => {
     await user.save();
 
     // await sendEmail(process.env.EMAIL_SEND_TO, user, "counselingForm");
-    const currentDate = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-    
-    await addToSheet(
-      "enquiry",
-      [name, email, mobile,  currentDate],
-      ["Name", "Email", "Mobile", "Timestamp"]
-    );
+    const currentDate = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    // await addToSheet(
+    //   "enquiry",
+    //   [name, email, mobile,  currentDate],
+    //   ["Name", "Email", "Mobile", "Timestamp"]
+    // );
 
     res.status(201).json({
       success: true,

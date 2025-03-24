@@ -135,10 +135,10 @@ export async function sendEmail(to, data, emailType) {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully to ${to}`);
+    console.log(`✅ ${emailType} mail sent successfully to ${to}`);
     return true;
   } catch (error) {
-    console.error("❌ Error sending email:", error.message, error);
+    console.error(`❌ Error sending email: ${emailType}`, error.message, error);
     return false;
   }
 }
