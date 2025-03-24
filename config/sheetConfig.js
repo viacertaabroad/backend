@@ -1,12 +1,27 @@
 import { google } from "googleapis";
-import fs from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+// import fs from "fs";
+// import { fileURLToPath } from "url";
+// import { dirname, join } from "path";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const credentials = JSON.parse(
-  fs.readFileSync(join(__dirname, "imp.json"), "utf-8")
-);
+// const __dirname = dirname(fileURLToPath(import.meta.url));
+// const credentials = JSON.parse(
+//   fs.readFileSync(join(__dirname, "imp.json"), "utf-8")
+// );
+
+const credentials = {
+  type: process.env.GOOGLE_SHEETS_TYPE,
+  project_id: process.env.GOOGLE_SHEETS_PROJECT_ID,
+  private_key_id: process.env.GOOGLE_SHEETS_PRIVATE_KEY_ID,
+  private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY.replace(/\\n/g, "\n"), // Ensure newlines are correctly interpreted
+  client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+  client_id: process.env.GOOGLE_SHEETS_CLIENT_ID,
+  auth_uri: process.env.GOOGLE_SHEETS_AUTH_URI,
+  token_uri: process.env.GOOGLE_SHEETS_TOKEN_URI,
+  auth_provider_x509_cert_url:
+    process.env.GOOGLE_SHEETS_AUTH_PROVIDER_X509_CERT_URL,
+  client_x509_cert_url: process.env.GOOGLE_SHEETS_CLIENT_X509_CERT_URL,
+  universe_domain: process.env.GOOGLE_SHEETS_UNIVERSE_DOMAIN,
+};
 
 const sheets = google.sheets({
   version: "v4",

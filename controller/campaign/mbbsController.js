@@ -1,4 +1,4 @@
-import { addToSheet } from "../../config/googleConfig.js";
+import { addToSheet } from "../../config/sheetConfig.js";
 import MBBS_InterestedUser from "../../models/campaign/mbbs.js";
 
 const newMBBS_InterestedUser = async (req, res) => {

@@ -1,5 +1,5 @@
 import Enquiry_Form from "../models/enquiryForm.js";
-import { addToSheet } from "../config/googleConfig.js";
+import { addToSheet } from "../config/sheetConfig.js";
 
 const createEnquiry = async (req, res) => {
   try {
