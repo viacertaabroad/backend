@@ -6,7 +6,9 @@ const blogSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
+    intro: {
+      type: String,
+    },
     author: {
       name: {
         type: String,
@@ -15,15 +17,48 @@ const blogSchema = new mongoose.Schema(
         type: String,
       },
     },
-    imageUrl: {
-      type: String,
-      required: true,
-    },
-
-    intro: {
+    image: {
       type: String,
     },
-    description: {
+    country: {
+      type: String,
+    },
+    date: {
+      type: String,
+    },
+    headline: {
+      type: String,
+    },
+    headlineintro: {
+      type: String,
+    },
+    subtopics: [
+      {
+        title: {
+          type: String,
+        },
+        intro: {
+          type: String,
+        },
+        info: {
+          type: String,
+        },
+        bulletpoints: [
+          {
+            title: {
+              type: String,
+            },
+            info: {
+              type: String,
+            },
+          },
+        ],
+        endline: {
+          type: String,
+        },
+      },
+    ],
+    meta: {
       type: String,
     },
   },

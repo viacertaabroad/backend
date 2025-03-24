@@ -1,8 +1,15 @@
 import express from "express";
-import { getBlogById, getBlogs } from "../controller/BlogController.js";
+import {
+  createBlog,
+  getBlogById,
+  getBlogs,
+  updateBlog,
+} from "../controller/BlogController.js";
 
 const route = express.Router();
 
 route.get("/all", getBlogs); //working
-route.get("/:blogId", getBlogById);
-export default route; //working
+route.get("/:blogId", getBlogById);//working
+route.post("/create", createBlog);
+route.put("/:id", updateBlog);
+export default route; 
