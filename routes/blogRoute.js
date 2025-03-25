@@ -9,7 +9,7 @@ import {
 const route = express.Router();
 
 route.get("/all", getBlogs); //working
-route.get("/:blogId", getBlogById);//working
+route.get("/:blogId", getBlogById); //working
 route.post("/create", createBlog);
-route.put("/:id", updateBlog);
-export default route; 
+route.put("/update/:id", updateBlog);
+export default route;

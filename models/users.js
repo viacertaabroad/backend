@@ -8,10 +8,13 @@ const userSchema = new mongoose.Schema(
       required: [true, "Please provide a name"],
       trim: true,
     },
+    avatar: {
+      type: String,
+    },
 
     email: {
       type: String,
-      required: [true, "Please provide an email"],
+      // required: [true, "Please provide an email"],
       unique: true,
       lowercase: true,
       validate: {
@@ -22,18 +25,22 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password Required"],
+      // required: function () {
+      //   return !this.googleId; // If Google ID exists, password is not required
+      // },
+      // required: [true, "Password Required"],
     },
     mobile: {
       type: String,
-      required: [true, "Please enter your phone number"],
-      unique: true,
-      validate: {
-        validator: function (value) {
-          return /^\d{10}$/.test(value);
-        },
-        message: "Phone number must be 10 digits",
-      },
+      // required: [true, "Please enter your phone number"],
+      unique: true, 
+      sparse: true, // ✅ Allows multiple null values
+      // validate: {
+      //   validator: function (value) {
+      //     return !value || /^\d{10}$/.test(value); // Only validate if present
+      //   },
+      //   message: "Phone number must be 10 digits",
+      // },
     },
     address: {
       pinCode: { type: String },
@@ -47,10 +54,12 @@ const userSchema = new mongoose.Schema(
       default: "user",
     },
 
-    favouriteCourse: {
-      type: [Schema.Types.ObjectId],
-      ref: "courses",
-    },
+    favouriteCourse: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "courses",
+      },
+    ],
     otp: {
       type: String,
     },

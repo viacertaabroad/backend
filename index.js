@@ -9,6 +9,8 @@ import mbbsRoutes from "./routes/campaignRoute.js";
 import ourStudentsRoutes from "./routes/ourStudentsRoute.js";
 import EnquiryRoutes from "./routes/enquiryRoute.js";
 import AdminRoutes from "./routes/adminRoute.js";
+import googleAuthRoute from "./routes/googleAuthRoute.js";
+
 // import { createServer } from "http";
 import cors from "cors";
 // import socketFn from "./socketConnector.js";
@@ -26,7 +28,7 @@ const port = process.env.PORT || 8000;
 app.use(
   cors({
     origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
 );
@@ -36,8 +38,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // .................................................................
+
+//  .............................................................
 // All Routes
 app.use("/demo", (req, res) => res.send("Hello World"));
+app.use("/auth", googleAuthRoute);  // /auth/google GET request
+// --
+
 app.use("/api/user", userRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/courses", coursesRoutes);

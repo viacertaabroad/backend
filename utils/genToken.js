@@ -14,10 +14,10 @@ export const generateToken = (user, res) => {
 
   res.cookie("auth_token", token, {
     httpOnly: true,
-    // secure: process.env.NODE_ENV === "production", // Secure only in production
-    sameSite: "None", // Required for cross-origin authentication
+    secure: false ,// true in productioin
+    sameSite: "Lax"  ,//"None", // Required for cross-origin authentication make none in production
     path: "/", // Available throughout the site
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiry
   });
-  console.log("Cookies Set");
+  console.log("Cookies Set.");
 };
