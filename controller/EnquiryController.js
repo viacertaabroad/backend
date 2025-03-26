@@ -28,11 +28,12 @@ const createEnquiry = async (req, res) => {
       timeZone: "Asia/Kolkata",
     });
 
-    // await addToSheet(
-    //   "enquiry",
-    //   [name, email, mobile,  currentDate],
-    //   ["Name", "Email", "Mobile", "Timestamp"]
-    // );
+    await addToSheet(
+      "enquiry",
+      [name, email, mobile, currentDate],
+      ["Name", "Email", "Mobile", "Timestamp"]
+    );
+    console.log("New Enqiry Created");
 
     res.status(201).json({
       success: true,

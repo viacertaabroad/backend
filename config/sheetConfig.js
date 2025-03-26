@@ -40,7 +40,7 @@ async function addToSheet(sheetName, data, headers) {
     // Check for existing headers only if required
     const checkHeaders = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetName}!A3:Z3`,
+      range: `${sheetName}!B3:Z3`,
     });
 
     if (!checkHeaders.data.values) {
@@ -51,7 +51,8 @@ async function addToSheet(sheetName, data, headers) {
         requestBody: { values: [["S.No.", ...headers]] },
       });
     }
-    const newRow = ["", ...data]; // Empty column at start
+
+    const newRow = ["", ...data];  
     // Insert data (append without checking next row for speed)
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
@@ -60,9 +61,9 @@ async function addToSheet(sheetName, data, headers) {
       requestBody: { values: [newRow] },
     });
 
-    console.log("✅ Data added successfully");
+    console.log(`✅ Excel Data added successfully in ${sheetName} sheet. `);
   } catch (error) {
-    console.error("❌ Error adding data:", error.message);
+    console.error("❌ Error adding data in Excel:", error.message);
   }
 }
 

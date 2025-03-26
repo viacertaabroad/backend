@@ -19,7 +19,6 @@ export const isAuthenticatedUser = async (req, res, next) => {
       if (!user) {
         return res.status(404).json({ success: false, msg: "User not found" });
       }
-
       req.user = user; // Attach user to request
       req.userId = user._id; // Attach userId to request
     }
@@ -27,14 +26,19 @@ export const isAuthenticatedUser = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Authentication Error:", error.message);
-    return res.status(401).json({ success: false, msg: "Authentication failed" });
+    return res
+      .status(401)
+      .json({ success: false, msg: "Authentication failed" });
   }
 };
 
 export const authorizedRole = (roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ success: false, message: "User is not allowed to access this route." });
+      return res.status(403).json({
+        success: false,
+        message: "User is not allowed to access this route.",
+      });
     }
     next();
   };
