@@ -1,18 +1,82 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, memo } from "react";
 import { io } from "socket.io-client";
+
+const SupportRoomCard = memo(
+  ({ room, handleJoinRoom, selectedRoom, socketRef }) => {
+    const [timeLeft, setTimeLeft] = useState("");
+
+    useEffect(() => {
+      const updateTimer = () => {
+        if (!room.closingAt) return;
+        const total = Math.max(0, new Date(room.closingAt) - Date.now());
+        const minutes = Math.floor(total / 60000);
+        const seconds = Math.floor((total % 60000) / 1000);
+        setTimeLeft(`${minutes}m ${seconds.toString().padStart(2, "0")}s`);
+      };
+
+      const timer = setInterval(updateTimer, 1000);
+      updateTimer();
+      return () => clearInterval(timer);
+    }, [room.closingAt]);
+
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+        <div className="flex justify-between items-start">
+          <div className="w-full">
+            <div className="flex items-center mb-2 justify-between">
+              <h2 className="text-lg font-semibold">Room: {room.roomId}</h2>
+              {selectedRoom === room.roomId && (
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="text-sm text-gray-600 mb-2">
+              {room.status === "waiting" ? "Waiting for agent" : "Active"} -
+              Closes in: {timeLeft}
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleJoinRoom(room.roomId)}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
+              >
+                Join Room
+              </button>
+              <button
+                onClick={() => {
+                  const isConfirmed = window.confirm(
+                    "Are you sure you want to close this room?"
+                  );
+                  if (isConfirmed && socketRef.current) {
+                    socketRef.current.emit("close_support_room", {
+                      roomId: room.roomId,
+                    });
+                  }
+                }}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
+              >
+                Close Room
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
 
 const Support = () => {
   const [activeRooms, setActiveRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [isClosing, setIsClosing] = useState(false); // New state for closing animation
+  const [isClosing, setIsClosing] = useState(false);
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const [connectedUsers, setConnectedUsers] = useState(1);
   const handleRoomClosed = useCallback(
     ({ roomId }) => {
       setActiveRooms((prev) => prev.filter((room) => room.roomId !== roomId));
-
       if (selectedRoom === roomId) {
         setIsClosing(true);
         setTimeout(() => {
@@ -24,46 +88,42 @@ const Support = () => {
     },
     [selectedRoom]
   );
-  // Initialize socket connection
+
   useEffect(() => {
     socketRef.current = io("http://localhost:8000");
 
-    socketRef.current.on("connect", () => {
+    const socket = socketRef.current;
+
+    socket.on("connect", () => {
       console.log("✅ Connected:", socketRef.current.id);
-      socketRef.current.emit("get_active_support_rooms");
+      socket.emit("get_active_support_rooms");
     });
 
-    socketRef.current.on("disconnect", () => {
-      console.log("❌ Disconnected:", socketRef.current.id);
-    });
-
-    socketRef.current.on("active_support_rooms", setActiveRooms);
-    socketRef.current.on("new_support_room", (room) => {
+    socket.on("active_support_rooms", setActiveRooms);
+    socket.on("new_support_room", (room) => {
       setActiveRooms((prev) => [...prev, room]);
     });
 
+    //
+    socket.on("user_count_update", ({ count }) => {
+      setConnectedUsers(count);
+    });
+
+    //
+
     return () => {
-      socketRef.current.disconnect();
+      socket.off("user_count_update");
+      socket.disconnect();
     };
   }, []);
 
-  // Handle room-specific events
   useEffect(() => {
     if (!socketRef.current || !selectedRoom) return;
 
     const socket = socketRef.current;
-
     const messageHandler = (message) => {
       if (message.roomId === selectedRoom) {
-        setMessages((prev) => {
-          const exists = prev.some(
-            (m) =>
-              m.text === message.text &&
-              m.sender === message.sender &&
-              m.timestamp === message.timestamp
-          );
-          return exists ? prev : [...prev, message];
-        });
+        setMessages((prev) => [...prev, message]);
       }
     };
 
@@ -80,6 +140,7 @@ const Support = () => {
         ]);
       }
     };
+
     socket.on("support_room_closed", handleRoomClosed);
     socket.on("new_message", messageHandler);
     socket.on("bot_message", botHandler);
@@ -91,17 +152,16 @@ const Support = () => {
     };
   }, [selectedRoom, handleRoomClosed]);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, handleRoomClosed]);
+  }, [messages]);
 
   const handleJoinRoom = (roomId) => {
     if (socketRef.current) {
       socketRef.current.emit("join_user_room", { roomId });
       setSelectedRoom(roomId);
       setMessages([]);
-      setIsClosing(false); // Reset closing state when joining a new room
+      setIsClosing(false);
     }
   };
 
@@ -122,60 +182,32 @@ const Support = () => {
       </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {activeRooms.map((room, index) => (
-          <div
-            key={room.roomId}
-            className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center mb-2">
-                  <span className="text-gray-500 mr-2">#{index + 1}</span>
-                  <h2 className="text-lg font-semibold">
-                    Room ID: {room.roomId}
-                  </h2>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleJoinRoom(room.roomId)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
-                  >
-                    Join Room
-                  </button>
-                  <button
-                    onClick={() => {
-                      const isConfirmed = window.confirm("Are you sure you want to close this room?");
-                      if (isConfirmed && socketRef.current) {
-                        socketRef.current.emit("close_support_room", {
-                          roomId: room.roomId,
-                        });
-                      }
-                    }}
-                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
-                  >
-                    Close Room
-                  </button>
-                </div>
-              </div>
-              {selectedRoom === room.roomId && (
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
-                  Active
-                </span>
-              )}
-            </div>
-          </div>
+        {activeRooms.map((room) => (
+          <SupportRoomCard
+            key={room}
+            room={room}
+            handleJoinRoom={handleJoinRoom}
+            selectedRoom={selectedRoom}
+            socketRef={socketRef}
+          />
         ))}
       </div>
 
       {selectedRoom && (
         <div
-          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-1000 ${
+          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity    duration-1000 ${
             isClosing ? "opacity-0" : "opacity-100"
           }`}
         >
           <div className="bg-white p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Chat Room #{selectedRoom}</h2>
+
+              {/* <h3>
+                <div className="text-sm bg-blue-800 px-2 py-1 rounded">
+                  👥 {connectedUsers} connected
+                </div>
+              </h3> */}
               <button
                 onClick={() => {
                   setIsClosing(true);
@@ -210,7 +242,7 @@ const Support = () => {
                         msg.sender === "support"
                           ? "bg-purple-500 text-white"
                           : msg.sender === "bot"
-                          ? "bg-purple-500 text-white"
+                          ? "bg-gray-300 text-black  "
                           : "bg-blue-500 text-white"
                       }`}
                     >
