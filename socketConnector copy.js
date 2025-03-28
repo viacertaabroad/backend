@@ -1,22 +1,41 @@
 import { Server } from "socket.io";
 import faqData from "./faqData.js";
 import SupportRoom from "./models/supportRoom.js";
-import { sendNewRoomNotification } from "./utils/sseNotification.js";
 
 const SUPPORT_HOURS = { start: 10, end: 23 };
 const userRooms = new Map();
-const activeSupportRooms = new Set();
+const activeSupportRooms = new Map();
 
 const socketFn = (server) => {
   const io = new Server(server, {
     cors: {
       origin: "http://localhost:3000",
       methods: ["GET", "POST"],
+      transports: ["websocket", "polling"],
+    },
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000,
+      skipMiddlewares: true,
     },
   });
+  const faqCache = {
+    questions: faqData.questions,
+    questionMap: new Map(
+      faqData.questions.map((q) => [q.question.toLowerCase(), q])
+    ),
+  };
 
   io.on("connection", (socket) => {
     console.log(`✅ New user connected: ${socket.id}`);
+    // Connection metadata
+    socket.data = {
+      joinedAt: Date.now(),
+      lastActivity: Date.now(),
+      roomId: null,
+    };
+    // Activity tracker
+    const updateActivity = () => (socket.data.lastActivity = Date.now());
+
     // ____________________________________________________
     socket.on("joinRoom", async ({ roomId }) => {
       userRooms.set(socket.id, roomId);
@@ -106,7 +125,6 @@ const socketFn = (server) => {
         ) {
           const newRoom = new SupportRoom({ roomId });
           await newRoom.save();
-          sendNewRoomNotification(roomId);
           //
           // supportRoomEmitter.emit('new_support_room',newRoom)
           //
@@ -289,8 +307,8 @@ const socketFn = (server) => {
       // Cleanup server-side resources
       if (roomId) {
         activeSupportRooms.delete(roomId);
-        // SupportRoom.deleteOne({ roomId }).catch(console.error);
-        // io.emit("active_support_rooms", Array.from(activeSupportRooms));
+        SupportRoom.deleteOne({ roomId }).catch(console.error);
+        io.emit("active_support_rooms", Array.from(activeSupportRooms));
       }
 
       userRooms.delete(socket.id);

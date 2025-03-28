@@ -11,17 +11,18 @@ import EnquiryRoutes from "./routes/enquiryRoute.js";
 import AdminRoutes from "./routes/adminRoute.js";
 import googleAuthRoute from "./routes/googleAuthRoute.js";
 
-// import { createServer } from "http";
+import { createServer } from "http";
 import cors from "cors";
-// import socketFn from "./socketConnector.js";
+import socketFn from "./socketConnector.js";
 
 import cookieParser from "cookie-parser";
 import { authorizedRole, isAuthenticatedUser } from "./middleware/auth.js";
+import { addClient } from "./utils/sseNotification.js";
 
 const app = express();
-// const server = createServer(app);
+const server = createServer(app);
 const port = process.env.PORT || 8000;
-// socketFn(server);
+socketFn(server);
 
 // .............................................................
 
@@ -39,10 +40,14 @@ app.use(cookieParser());
 
 // .................................................................
 
+app.get("/events", (req, res) => {
+  addClient(res);
+});
+
 //  .............................................................
 // All Routes
 app.use("/demo", (req, res) => res.send("Hello World"));
-app.use("/auth", googleAuthRoute);  // /auth/google GET request
+app.use("/auth", googleAuthRoute); // /auth/google GET request
 // --
 
 app.use("/api/user", userRoutes);
@@ -60,8 +65,8 @@ app.use(
 
 // ///////////////////////////////
 
-// server.listen(port, () => console.log(`🚀 Server running on port: ${port}`));
-app.listen(port, () => console.log(`🚀 Server running on port: ${port}`));
+server.listen(port, () => console.log(`🚀 Server running on port: ${port}`));
+// app.listen(port, () => console.log(`🚀 Server running on port: ${port}`));
 
 connectToDb().catch((err) => {
   console.error("⚠️ Database connection failed:", err.message);
