@@ -177,8 +177,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 import OpenAI from "openai";
 const client = new OpenAI({
-  apiKey:
-    "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",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 const getAIResponse = async (message) => {
@@ -187,22 +186,15 @@ const getAIResponse = async (message) => {
     input: "Write a one-sentence bedtime story about a unicorn.",
   });
   console.log("response.output_text", response.output_text);
-  return response.output_text
+  return response.output_text;
 };
 
 export default getAIResponse;
 
-
-
-
-
-
-
-
 // import OpenAI from "openai";
 
 // const openai = new OpenAI({
-//   apiKey: "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",
+//   apiKey: "process.env.OPENAI_API_KEY",
 // });
 
 // const completion = openai.chat.completions.create({

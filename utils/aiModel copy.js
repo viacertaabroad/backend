@@ -48,47 +48,39 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 const completion = openai.chat.completions.create({
   model: "gpt-4o-mini",
   store: true,
-  messages: [
-    {"role": "user", "content": "write a haiku about ai"},
-  ],
+  messages: [{ role: "user", content: "write a haiku about ai" }],
 });
 
 completion.then((result) => console.log(result.choices[0].message));
 
-
 // --------------------------------
 
-
-
-
-
-
-
-const { OpenAI } = require('openai');
-
+const { OpenAI } = require("openai");
 
 // Initialize OpenAI
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-  const chatHistories = new Map();const history = chatHistories.get(socket.id);
-      
-  // Add user message to history
-  history.push({ role: "user", content: message });  const completion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: history,
-    temperature: 0.7, // Controls randomness
-    max_tokens: 150
-  });
+const chatHistories = new Map();
+const history = chatHistories.get(socket.id);
 
-  const aiResponse = completion.choices[0].message.content;
-  
-  // Add AI response to history
-  history.push({ role: "assistant", content: aiResponse });
+// Add user message to history
+history.push({ role: "user", content: message });
+const completion = await openai.chat.completions.create({
+  model: "gpt-3.5-turbo",
+  messages: history,
+  temperature: 0.7, // Controls randomness
+  max_tokens: 150,
+});
+
+const aiResponse = completion.choices[0].message.content;
+
+// Add AI response to history
+history.push({ role: "assistant", content: aiResponse });
