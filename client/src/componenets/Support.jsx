@@ -201,7 +201,9 @@ const Support = () => {
         >
           <div className="bg-white p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Chat Room #{selectedRoom}</h2>
+              <h2 className="text-xl font-bold m-auto">
+                Chat Room <p className="text-sm">#{selectedRoom}</p>
+              </h2>
 
               {/* <h3>
                 <div className="text-sm bg-blue-800 px-2 py-1 rounded">
