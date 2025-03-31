@@ -100,6 +100,10 @@ const Support = () => {
     });
 
     socket.on("active_support_rooms", setActiveRooms);
+    // socket.on("active_support_rooms", (room) => {
+      // setActiveRooms((prev) => [...prev, room]);
+    // });
+    
     socket.on("new_support_room", (room) => {
       setActiveRooms((prev) => [...prev, room]);
     });

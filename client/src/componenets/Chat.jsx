@@ -12,7 +12,7 @@ function Chat() {
   const [input, setInput] = useState("");
   const [showPredefined, setShowPredefined] = useState(false);
   const [isSupportRoomActive, setIsSupportRoomActive] = useState(false);
-  const [userMessageCount, setUserMessageCount] = useState(0);
+  const [userMessageCount, setUserMessageCount] = useState(5);
   const [supportRequested, setSupportRequested] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState(1);
   const SUPPORT_HOURS = { start: 10, end: 18 };
@@ -170,14 +170,18 @@ function Chat() {
   }, [SUPPORT_HOURS.start, SUPPORT_HOURS.end]);
   //  this useEffect to handle support room closure events
   useEffect(() => {
-    const handleSupportRoomClosed = () => {
+    const handleSupportRoomClosed = (data) => {
+
+      if (!roomId || data.roomId === roomId) {
       setIsSupportRoomActive(false);
+      setSupportRequested(false);
       localStorage.setItem(
         "isViaCertaSupportRoomActive",
         JSON.stringify(false)
       );
+    
     };
-
+  }
     if (socketRef.current) {
       socketRef.current.on("support_room_closed", handleSupportRoomClosed);
     }
@@ -187,7 +191,7 @@ function Chat() {
         socketRef.current.off("support_room_closed", handleSupportRoomClosed);
       }
     };
-  }, []);
+  }, [roomId]);
 
   useEffect(() => {
     if (roomId) {
@@ -317,7 +321,6 @@ function Chat() {
   };
 
   const handleCloseSupport = () => {
-    setSupportRequested(false);
     socketRef.current.emit("cancel_support_request", { roomId });
   };
 
