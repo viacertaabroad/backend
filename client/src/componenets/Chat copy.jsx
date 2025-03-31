@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
-import ReactMarkdown from "react-markdown";
+// import ReactMarkdown from "react-markdown";
 
 function Chat() {
   const socketRef = useRef(null);
@@ -13,7 +13,14 @@ function Chat() {
   const [showPredefined, setShowPredefined] = useState(false);
   const [isSupportRoomActive, setIsSupportRoomActive] = useState(false);
   const [userMessageCount, setUserMessageCount] = useState(0);
+  const [supportRequested, setSupportRequested] = useState(false);
+  const [connectedUsers, setConnectedUsers] = useState(1);
 
+  const SafeHTML = ({ html }) => {
+    return (
+      <div className="text-right" dangerouslySetInnerHTML={{ __html: html }} />
+    );
+  };
   useEffect(() => {
     let storedUserId = localStorage.getItem("ViaCerta_User");
 
@@ -28,6 +35,10 @@ function Chat() {
     });
     socketRef.current.connect();
     const socket = socketRef.current;
+
+    socket.on("user_count_update", ({ count }) => {
+      setConnectedUsers(count);
+    });
 
     const handlePredefinedQuestions = ({ questions }) => {
       if (Array.isArray(questions)) {
@@ -181,16 +192,20 @@ function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[70vh] w-[60%] bg-gray-100 rounded-lg shadow-lg m-auto">
+    <div className="flex flex-col  h-[95vh] w-[60%] bg-gray-100 rounded-lg shadow-lg m-auto">
       {/* Header */}
       <div className="flex justify-between items-center bg-blue-600 text-white p-4 rounded-t-lg">
         <h2 className="text-lg font-semibold">ViaCerta Bot</h2>
-        <button
+
+        {/* <button
           className="text-sm bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition duration-200"
           onClick={clearChat}
         >
           Clear Chat
-        </button>
+        </button> */}
+        {/* <span className="text-sm bg-green-600 px-2 py-1 rounded">
+          👥 {connectedUsers}
+        </span> */}
       </div>
 
       {/* Chat messages container */}
@@ -199,20 +214,34 @@ function Chat() {
         className="flex-1 overflow-y-auto p-4 space-y-4 bg-white"
       >
         {/* Welcome message */}
-        <div className="flex justify-start">
+        {
+          !isSupportRoomActive&&  <div className="flex justify-start">
           <div className="max-w-xs bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow">
             🤖 Hello! How can I help you today?
           </div>
         </div>
+        }
+       
 
         {/* Predefined questions */}
         {!isChatbotDisabled && preDefinedQuestions.length > 0 && (
-          <div className="space-y-2">
+          // <div className="space-y-2">
+          //   {preDefinedQuestions.map((q, index) => (
+          //     <button
+          //       key={index}
+          //       onClick={() => handlePredefinedClick(q)}
+          //       className="block w-full text-left bg-blue-200 text-blue-800 px-4 py-2 rounded-lg hover:bg-blue-300 transition duration-200"
+          //     >
+          //       {q}
+          //     </button>
+          //   ))}
+          // </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {preDefinedQuestions.map((q, index) => (
               <button
                 key={index}
                 onClick={() => handlePredefinedClick(q)}
-                className="block w-full text-left bg-blue-200 text-blue-800 px-4 py-2 rounded-lg hover:bg-blue-200 transition duration-200"
+                className="w-full text-left bg-blue-100 text-blue-900 font-medium px-5 py-3 rounded-xl shadow-md hover:bg-blue-200 active:bg-blue-300 focus:ring-2 focus:ring-blue-500 transition-all duration-300"
               >
                 {q}
               </button>
@@ -246,20 +275,48 @@ function Chat() {
 
               {/* Message text */}
               <div>
-                <ReactMarkdown>{msg.text}</ReactMarkdown>
+                {/* <ReactMarkdown>{msg.text}</ReactMarkdown> */}
+                <SafeHTML html={msg.text} />
+                {/* {msg.followUp && Array.isArray(msg.followUp) && (
+                  <div className="mt-2">
+                    {msg.followUp.map((q, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handlePredefinedClick(q)}
+                        className="block w-full text-left bg-lime-800 text-white px-3 py-1 rounded mb-1 hover:bg-teal-700 transition duration-200"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )} */}
+
                 {msg.followUp && Array.isArray(msg.followUp) && (
-                <div className="mt-2">
-                  {msg.followUp.map((q, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handlePredefinedClick(q)}
-                      className="block w-full text-left bg-lime-800 text-white px-3 py-1 rounded mb-1 hover:bg-teal-700 transition duration-200"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              )}
+                  <div className="mt-3 space-y-2">
+                    {msg.followUp.map((q, i) => (
+                      <button
+                        key={i}
+                        disabled={isSupportRoomActive}
+                        onClick={() => handlePredefinedClick(q)}
+                        className={`w-full text-left bg-green-600 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:bg-green-700 active:bg-green-800 focus:ring-2 focus:ring-green-400 transition-all duration-300 ${
+                          isSupportRoomActive
+                            ? "cursor-not-allowed bg-gray-200 "
+                            : null
+                        }`}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <p
+                  className={`text-xs mt-1 opacity-70 pt-2 ${
+                    msg.sender === "user" ? " text-right  " : "text-left"
+                  }`}
+                >
+                  {msg.timestamp}
+                </p>
               </div>
             </div>
           </div>
@@ -296,6 +353,8 @@ function Chat() {
           userMessageCount >= 5 && (
             <button
               onClick={requestSupport}
+              // disabled={supportRequested}
+              title="Live support available from 10 AM to 6 PM"
               className="w-full mt-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition duration-200"
             >
               Connect with Support

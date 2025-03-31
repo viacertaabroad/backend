@@ -2,8 +2,9 @@ import { Server } from "socket.io";
 import faqData from "./faqData.js";
 import SupportRoom from "./models/supportRoom.js";
 import { sendNewRoomNotification } from "./utils/sseNotification.js";
+import getAIResponse from "./utils/aiModel.js";
 
-const SUPPORT_HOURS = { start: 10, end: 20 };
+const SUPPORT_HOURS = { start: 10, end: 18 };
 const userRooms = new Map();
 const activeSupportRooms = new Set();
 //
@@ -11,6 +12,20 @@ const activityTimers = new Map();
 const warningTimers = new Map();
 const lastActivityMap = new Map();
 const roomUsers = new Map(); // Track connected users per room
+
+//
+const conversationContexts = new Map();
+
+function getConversationContext(roomId) {
+  return conversationContexts.get(roomId) || {};
+}
+
+function updateContext(roomId, newContext) {
+  conversationContexts.set(roomId, {
+    ...getConversationContext(roomId),
+    ...newContext,
+  });
+}
 
 //
 
@@ -158,10 +173,42 @@ const socketFn = (server) => {
           io.to(roomId).emit("bot_message", { ...botResponse, roomId });
         }, 1000);
       } else {
+        //
+        // try {
+        //   const context = getConversationContext(roomId);
+        //   const response = await getAIResponse(message, context);
+
+        //   // Update conversation context
+        //   updateContext(roomId, {
+        //     lastQuery: message,
+        //     pendingFollowUp: response.followUp?.[0],
+        //   });
+
+        //   const botResponse = {
+        //     text: response.text,
+        //     sender: "bot",
+        //     followUp: response.followUp || [],
+        //     roomId,
+        //   };
+
+        //   io.to(roomId).emit("bot_message", botResponse);
+        // } catch (error) {
+        //   console.error("Chat error:", error);
+        //   io.to(roomId).emit("bot_message", {
+        //     text: "We're experiencing high demand. Please try again shortly.",
+        //     sender: "bot",
+        //     roomId,
+        //   });
+        // }
+
+        // const aiResponse = await getAIResponse(message);
+        const aiResponse = "Try again later.";
+
         const botResponse = {
-          text: "I'm not sure about that. Please contact support.",
+          text: aiResponse,
           sender: "bot",
-          followUp: [],
+          followUp: aiResponse.followUp || [],
+          roomId,
         };
         setTimeout(() => {
           io.to(roomId).emit("bot_message", { ...botResponse, roomId });

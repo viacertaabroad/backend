@@ -573,6 +573,7 @@ const faqData = {
       followUp: [
         "How can I apply for a study abroad program?",
         "What documents do I need to get started?",
+        "Would you like to know about our successful students?",
       ],
     },
     {
@@ -811,6 +812,15 @@ const faqData = {
           <p>Our career counseling services are designed to help you identify your strengths, explore in-demand career paths, and receive personalized advice on upskilling and networking.</p>
           <p>We ensure every step is aligned with your academic and professional ambitions.</p>
         </div>
+      `,
+      followUp: [],
+    },
+    {
+      question: "Would you like to know about our successful students?",
+      answer: `
+        <div class="text-left space-y-4">
+          <h1>Below are Our Success students.</h1>
+                 </div>
       `,
       followUp: [],
     },
