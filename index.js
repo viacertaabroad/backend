@@ -28,36 +28,36 @@ cluster.schedulingPolicy = cluster.SCHED_RR;
 const numCPUs = os.cpus().length;
 const port = process.env.PORT || 8000;
 
-if (cluster.isPrimary) {
-  console.log(`🛠️ Master process ${process.pid} is running`);
-  console.log(`Using scheduling policy: ${cluster.schedulingPolicy}`);
+// if (cluster.isPrimary) {
+//   console.log(`🛠️ Master process ${process.pid} is running`);
+//   console.log(`Using scheduling policy: ${cluster.schedulingPolicy}`);
 
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork(); // Fork workers
-  }
+//   for (let i = 0; i < numCPUs; i++) {
+//     cluster.fork(); // Fork workers
+//   }
 
-  cluster.on("exit", (worker) => {
-    console.error(
-      `⚠️ Worker ${worker.process.pid} crashed. Restarting in 3s...`
-    );
-    setTimeout(() => cluster.fork(), 3000); // Restart the worker after 3s
-  });
+//   cluster.on("exit", (worker) => {
+//     console.error(
+//       `⚠️ Worker ${worker.process.pid} crashed. Restarting in 3s...`
+//     );
+//     setTimeout(() => cluster.fork(), 3000); // Restart the worker after 3s
+//   });
 
-  // Graceful shutdown for master process
-  process.on("SIGTERM", () => {
-    console.log(`❌ Master process ${process.pid} shutting down...`);
-    // Killing workers gracefully
-    for (const id in cluster.workers) {
-      cluster.workers[id].kill();
-    }
-    process.exit(0); // Exit master process
-  });
+//   // Graceful shutdown for master process
+//   process.on("SIGTERM", () => {
+//     console.log(`❌ Master process ${process.pid} shutting down...`);
+//     // Killing workers gracefully
+//     for (const id in cluster.workers) {
+//       cluster.workers[id].kill();
+//     }
+//     process.exit(0); // Exit master process
+//   });
 
-  process.on("SIGINT", () => {
-    console.log("Master process is shutting down...");
-    process.exit(0); // Exit master process
-  });
-} else {
+//   process.on("SIGINT", () => {
+//     console.log("Master process is shutting down...");
+//     process.exit(0); // Exit master process
+//   });
+// } else {
   // Worker process logic
   connectToDb(); // Database connection for each worker
 
@@ -119,7 +119,7 @@ if (cluster.isPrimary) {
     console.log(`Worker ${process.pid} is shutting down...`);
     process.exit(0); // Exit worker process
   });
-}
+// }
 
 process.on("uncaughtException", (err) => {
   console.error("❌ Uncaught Exception:", err);
