@@ -68,7 +68,7 @@ socketFn(server); // Set up socket for communication
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["https://viacerta-abroad.onrender.com", "http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
@@ -78,10 +78,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
-app.use("/demo", (req, res) => res.send("Hello World"));
-app.get("/health", (req, res) =>
-  res.json({ status: "ok", worker: process.pid })
-);
+app.use("/demo", (req, res) => {
+  console.log("hello World");
+  res.send("Hello World");
+});
+app.get("/health", (req, res) => {
+  console.log("health Status", { status: "ok", worker: process.pid });
+  res.json({ status: "ok", worker: process.pid });
+});
 app.get("/workers", (req, res) => {
   console.log(`Worker ${process.pid} received a /workers request`);
   res.json({ message: `Worker ${process.pid} is handling requests` });
