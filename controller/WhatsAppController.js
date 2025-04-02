@@ -18,74 +18,38 @@ if (process.env.RUNNING_ON === "test") {
   );
 }
 
-// Predefined responses
+// Response Templates
 const RESPONSES = {
-  WELCOME: `
-🌍 Welcome to Viacerta Abroad! 🌍
-
-Hello! We are Viacerta Abroad, a dedicated institute committed to helping students achieve their dreams of studying abroad.
-
-🎓 **What We Offer**:
-
-✅ Expert guidance in selecting the right university and course.
-✅ Comprehensive visa support to simplify your journey.
-✅ Placement assistance to help you secure the best opportunities.
-
-📩 Want to learn more? Reply with:
-
-1. "MORE" for detailed services.
-2. "CONTACT" to speak with an expert.
-3. "FAQ" for frequently asked questions.
-`,
-
-  HELP: `
-🆘 Here’s how I can assist you:
-
-1. Type "MORE" to learn about our services.
-2. Type "CONTACT" to get in touch with our support team.
-3. Type "FAQ" for frequently asked questions.
-`,
-
-  MORE: `
-📚 Here’s more about our services:
-
-🎓 **University Selection**: We help you choose the best universities based on your profile.
-🛂 **Visa Assistance**: From documentation to interview preparation, we’ve got you covered.
-💼 **Placement Support**: We assist you in finding internships and job opportunities abroad.
-
-Reply with:
-1. "CONTACT" to speak with an expert.
-2. "FAQ" for frequently asked questions.
-`,
-
-  CONTACT: `
-📞 You can reach us at:
-
-📞 Phone: +1-123-456-7890
-📧 Email: support@viacertaabroad.com
-📍 Address: 123 Education Lane, Knowledge City.
-
-Would you like to schedule a callback? Reply with "YES" or "NO".
-`,
-
-  FAQ: `
-❓ Frequently Asked Questions:
-
-1. How do I apply? - Reply "APPLY" for step-by-step guidance.
-2. What are the fees? - Reply "FEES" for detailed information.
-3. Can I get a scholarship? - Reply "SCHOLARSHIP" to learn more.
-
-Reply with your choice or "BACK" to return to the main menu.
-`,
-
-  DEFAULT: `
-😅 Sorry, I didn’t understand that.
-
-Type "HELP" for assistance or "MORE" to learn about our services.
-`,
+  WELCOME: {
+    text: `🌍 Welcome to Viacerta Abroad! 🌍\n\nHello! We are Viacerta Abroad...`,
+    buttons: [
+      { title: '📚 MORE', id: 'MORE' },
+      { title: '📞 CONTACT', id: 'CONTACT' },
+      { title: '❓ FAQ', id: 'FAQ' }
+    ]
+  },
+  HELP: {
+    text: `🆘 Here's how I can assist you...`,
+    buttons: [
+      { title: '📚 MORE', id: 'MORE' },
+      { title: '📞 CONTACT', id: 'CONTACT' }
+    ]
+  },
+  MORE: {
+    text: `📚 Here's more about our services...`
+  },
+  CONTACT: {
+    text: `📞 You can reach us at...`
+  },
+  FAQ: {
+    text: `❓ Frequently Asked Questions...`
+  },
+  DEFAULT: {
+    text: `😅 Sorry, I didn't understand that...`
+  }
 };
 
-const userContext = {};
+ 
 
 // Handle incoming WhatsApp messages
 const whatsAppChat = async (req, res) => {
