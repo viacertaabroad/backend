@@ -4,6 +4,8 @@ import {
   sendTextMessage,
   sendButtonMessage,
   sendListMessage,
+  sendQuickReplyMessage,
+  sendCarouselMessage,
 } from "./whatsapp.service.js";
 
 export const verifyWebhook = (req, res) => {
@@ -25,14 +27,129 @@ export const verifyWebhook = (req, res) => {
   res.sendStatus(403);
 };
 
+// const sendResponse = async (phoneNumber, response) => {
+//   try {
+//     let result;
+//     switch (response.type) {
+//       case "list":
+//         result = await sendListMessage(phoneNumber, response);
+//         break;
+//       case "carousel":
+//         result = await sendCarouselMessage(phoneNumber, response.items);
+//         break;
+//       case "quick_reply":
+//         result = await sendQuickReplyMessage(phoneNumber, response);
+//         break;
+//       case "button":
+//       case "interactive":
+//         if (response.buttons?.length > 0) {
+//           result = await sendButtonMessage(
+//             phoneNumber,
+//             response.text || response.body,
+//             response.buttons
+//           );
+//         } else {
+//           result = await sendTextMessage(
+//             phoneNumber,
+//             response.text || "Please select an option"
+//           );
+//         }
+//         break;
+//       default:
+//         result = await sendTextMessage(
+//           phoneNumber,
+//           response.text || response.body
+//         );
+//     }
+
+//     if (!result?.success) {
+//       console.error("Failed to send message:", result?.error);
+//       await sendTextMessage(
+//         phoneNumber,
+//         "We're having technical difficulties. Please try again later."
+//       );
+//     }
+
+//     return result;
+//   } catch (error) {
+//     console.error("Response sending failed:", error);
+//     throw error; // Re-throw to be handled by the caller
+//   }
+// };
+
+const sendResponse = async (phoneNumber, response) => {
+  try {
+    let result;
+
+    switch (response.interactiveType) {
+      case "button":
+        result = await sendButtonMessage(phoneNumber, response);
+        break;
+
+      case "list":
+        result = await sendListMessage(phoneNumber, response);
+        break;
+
+      case "quick_reply":
+        result = await sendQuickReplyMessage(phoneNumber, response);
+        break;
+
+      case "product":
+        result = await sendCarouselMessage(phoneNumber, response);
+        break;
+
+      default:
+        result = await sendTextMessage(
+          phoneNumber,
+          response.text || response.body
+        );
+    }
+
+    if (!result?.success) {
+      console.error("Message failed:", {
+        type: response.interactiveType,
+        error: result?.error,
+        response,
+      });
+
+      // Fallback to simple text
+      await sendTextMessage(
+        phoneNumber,
+        response.fallbackText ||
+          "We're having technical difficulties. Please try again later."
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Response sending failed:", {
+      error: error.message,
+      stack: error.stack,
+      response,
+    });
+
+    throw error;
+  }
+};
+
 export const handleIncomingMessage = async (req, res) => {
   try {
     // Validate request structure
-    if (!req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
-      console.log("Empty or invalid webhook payload");
+    if (!req.body?.object || req.body.object !== "whatsapp_business_account") {
+      console.log("Invalid webhook payload structure");
       return res.sendStatus(200);
     }
-    const message = req.body.entry[0].changes[0].value.messages[0];
+    const entry = req.body.entry?.[0];
+    if (!entry) {
+      console.log("Empty webhook entry");
+      return res.sendStatus(200);
+    }
+    const message = entry.changes?.[0]?.value?.messages?.[0];
+    if (!message) {
+      console.log("No message in payload", { body: req.body });
+      return res.sendStatus(200);
+    }
+
     const phoneNumber = message.from;
     const messageType = message.type;
 
@@ -76,49 +193,7 @@ export const handleIncomingMessage = async (req, res) => {
       hasSections: !!response.sections,
     });
 
-    // Handle different response types
-    try {
-      switch (response.type) {
-        case "list":
-          await sendListMessage(phoneNumber, response);
-          break;
-        case "carousel":
-          await sendCarouselMessage(phoneNumber, response.items);
-          break;
-        case "quick_reply":
-          await sendQuickReplyMessage(phoneNumber, response);
-          break;
-        case "button":
-        case "interactive":
-          if (response.buttons?.length > 0) {
-            await sendButtonMessage(
-              phoneNumber,
-              response.text || response.body,
-              response.buttons
-            );
-          } else {
-            await sendTextMessage(
-              phoneNumber,
-              response.text || "Please select an option"
-            );
-          }
-          break;
-        default:
-          await sendTextMessage(phoneNumber, response.text || response.body);
-      }
-    } catch (sendError) {
-      console.error("Failed to send response:", {
-        error: sendError.message,
-        responseType: response.type,
-        phoneNumber,
-      });
-
-      // Fallback to simple text message if complex message fails
-      await sendTextMessage(
-        phoneNumber,
-        "We're having trouble loading options. Please try again later."
-      );
-    }
+    await sendResponse(phoneNumber, response);
 
     res.sendStatus(200);
   } catch (error) {

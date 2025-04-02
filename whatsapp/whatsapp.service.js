@@ -42,27 +42,49 @@ const buildTextMessage = (to, text) => ({
 // });
 
 // Update buildButtonMessage to handle your structure
-const buildButtonMessage = (to, text, buttons) => {
-  const buttonArray = buttons.map((btn) => ({
-    type: "reply",
-    reply: {
-      id: btn.id || btn.title.toLowerCase().replace(/\s+/g, "_"),
-      title: btn.title,
-    },
-  }));
+// const buildButtonMessage = (to, text, buttons) => {
+//   const buttonArray = buttons.map((btn) => ({
+//     type: "reply",
+//     reply: {
+//       id: btn.id || btn.title.toLowerCase().replace(/\s+/g, "_"),
+//       title: btn.title,
+//     },
+//   }));
 
-  return {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to,
-    type: "interactive",
-    interactive: {
-      type: "button",
-      body: { text },
-      action: { buttons: buttonArray },
+//   return {
+//     messaging_product: "whatsapp",
+//     recipient_type: "individual",
+//     to,
+//     type: "interactive",
+//     interactive: {
+//       type: "button",
+//       body: { text },
+//       action: { buttons: buttonArray },
+//     },
+//   };
+// };
+const buildButtonMessage = (to, message) => ({
+  messaging_product: "whatsapp",
+  recipient_type: "individual",
+  to,
+  type: "interactive",
+  interactive: {
+    type: "button",
+    header: message.header ? { type: "text", text: message.header } : undefined,
+    body: { text: message.body },
+    footer: message.footer ? { text: message.footer } : undefined,
+    action: {
+      buttons: message.buttons.map((btn) => ({
+        type: "reply",
+        reply: {
+          id: btn.id,
+          title: btn.title.length > 20 ? btn.title.substring(0, 20) : btn.title,
+        },
+      })),
     },
-  };
-};
+  },
+});
+
 // Add to whatsapp.service.js
 
 const buildCarouselMessage = (to, items) => ({
@@ -101,30 +123,79 @@ const buildTemplateMessage = (to, templateName, languageCode = "en_US") => ({
   },
 });
 // Add to whatsapp.service.js
+// const buildListMessage = (to, message) => ({
+//   messaging_product: "whatsapp",
+//   to,
+//   type: "interactive",
+//   interactive: {
+//     type: "list",
+//     header: { type: "text", text: message.header },
+//     body: { text: message.body },
+//     footer: { text: message.footer },
+//     action: {
+//       button: message.button.title,
+//       sections: message.sections.map((section) => ({
+//         title: section.title,
+//         rows: section.rows || [
+//           {
+//             id: section.title.toLowerCase().replace(/\s+/g, "_"),
+//             title: section.title,
+//             description: section.description,
+//           },
+//         ],
+//       })),
+//     },
+//   },
+// });
+
 const buildListMessage = (to, message) => ({
   messaging_product: "whatsapp",
+  recipient_type: "individual",
   to,
   type: "interactive",
   interactive: {
     type: "list",
     header: { type: "text", text: message.header },
     body: { text: message.body },
-    footer: { text: message.footer },
+    footer: message.footer ? { text: message.footer } : undefined,
     action: {
-      button: message.button.title,
+      button: message.buttonText,
       sections: message.sections.map((section) => ({
         title: section.title,
-        rows: section.rows || [
-          {
-            id: section.title.toLowerCase().replace(/\s+/g, "_"),
-            title: section.title,
-            description: section.description,
-          },
-        ],
+        rows: section.rows.map((row) => ({
+          id: row.id,
+          title: row.title,
+          description: row.description,
+        })),
       })),
     },
   },
 });
+
+// const buildQuickReplyMessage = (to, message) => ({
+//   messaging_product: "whatsapp",
+//   recipient_type: "individual",
+//   to,
+//   type: "interactive",
+//   interactive: {
+//     type: "list",
+//     body: { text: message.text },
+//     action: {
+//       button: "Options",
+//       sections: [
+//         {
+//           title: message.text,
+//           rows: message.options.map((opt) => ({
+//             id: opt.id,
+//             title: opt.title,
+//             description: opt.description || "",
+//           })),
+//         },
+//       ],
+//     },
+//   },
+// });
+// Core functions
 
 const buildQuickReplyMessage = (to, message) => ({
   messaging_product: "whatsapp",
@@ -133,12 +204,12 @@ const buildQuickReplyMessage = (to, message) => ({
   type: "interactive",
   interactive: {
     type: "list",
-    body: { text: message.text },
+    body: { text: message.body },
     action: {
       button: "Options",
       sections: [
         {
-          title: message.text,
+          title: "Choose an option",
           rows: message.options.map((opt) => ({
             id: opt.id,
             title: opt.title,
@@ -149,7 +220,6 @@ const buildQuickReplyMessage = (to, message) => ({
     },
   },
 });
-// Core functions
 export const sendTextMessage = async (to, text) => {
   const payload = buildTextMessage(to, text);
   return sendMessage(payload);
@@ -199,7 +269,7 @@ const sendMessage = async (payload) => {
     };
 
     logMessage(payload, result);
-    
+
     return {
       success: true,
       messageId: response.data?.messages?.[0]?.id,
