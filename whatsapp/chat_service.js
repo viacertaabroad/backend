@@ -70,7 +70,7 @@ function handleButtonResponse(userId, buttonId) {
 function handleTextCommand(userId, input) {
   const commandMap = {
     hi: "welcome",
-    hello: "welcome",
+    hello: "WELCOME",
     services: "services",
     destinations: "destinations",
     tests: "test_prep",

@@ -14,7 +14,7 @@ const responses = {
 
   services: {
     type: "list",
-    
+
     header: "📚 *Our End-to-End Services*",
     text: "Here are our services:\n1. Service A\n2. Service B\n3. Service C",
     body: "Choose an option for details:",
@@ -78,7 +78,7 @@ const responses = {
   },
 
   contact: {
-    text: "You can reach us at:\nPhone: +1234567890\nEmail: contact@example.com"
+    text: "You can reach us at:\nPhone: +1234567890\nEmail: contact@example.com",
   },
 
   fallback: {
