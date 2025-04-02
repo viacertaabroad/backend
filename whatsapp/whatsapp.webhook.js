@@ -4,7 +4,7 @@ import {
   sendTextMessage,
   sendButtonMessage,
   sendListMessage,
-  sendQuickReplyMessage,
+  // sendQuickReplyMessage,
   sendCarouselMessage,
 } from "./whatsapp.service.js";
 
@@ -90,9 +90,9 @@ const sendResponse = async (phoneNumber, response) => {
         result = await sendListMessage(phoneNumber, response);
         break;
 
-      case "quick_reply":
-        result = await sendQuickReplyMessage(phoneNumber, response);
-        break;
+      // case "quick_reply":
+      //   result = await sendQuickReplyMessage(phoneNumber, response);
+      //   break;
 
       case "product":
         result = await sendCarouselMessage(phoneNumber, response);
