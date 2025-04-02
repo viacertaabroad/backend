@@ -23,24 +23,74 @@ const buildTextMessage = (to, text) => ({
   type: "text",
   text: { body: text },
 });
+//
+// const buildButtonMessage = (to, text, buttons) => ({
+//   messaging_product: "whatsapp",
+//   recipient_type: "individual",
+//   to,
+//   type: "interactive",
+//   interactive: {
+//     type: "button",
+//     body: { text },
+//     action: {
+//       buttons: buttons.map((btn) => ({
+//         type: "reply",
+//         reply: { id: btn.id, title: btn.title },
+//       })),
+//     },
+//   },
+// });
 
-const buildButtonMessage = (to, text, buttons) => ({
+// Update buildButtonMessage to handle your structure
+const buildButtonMessage = (to, text, buttons) => {
+  const buttonArray = buttons.map((btn) => ({
+    type: "reply",
+    reply: {
+      id: btn.id || btn.title.toLowerCase().replace(/\s+/g, "_"),
+      title: btn.title,
+    },
+  }));
+
+  return {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to,
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: { text },
+      action: { buttons: buttonArray },
+    },
+  };
+};
+// Add to whatsapp.service.js
+
+const buildCarouselMessage = (to, items) => ({
   messaging_product: "whatsapp",
   recipient_type: "individual",
   to,
   type: "interactive",
   interactive: {
-    type: "button",
-    body: { text },
+    type: "product", // WhatsApp requires 'product' type for carousels
+    header: { type: "text", text: "Study Destinations" },
+    body: { text: "Choose a destination to learn more" },
     action: {
-      buttons: buttons.map((btn) => ({
-        type: "reply",
-        reply: { id: btn.id, title: btn.title },
+      catalog_id: "YOUR_CATALOG_ID", // Must be a real catalog ID
+      sections: items.map((item) => ({
+        title: item.title,
+        product_items: [
+          {
+            product_retailer_id:
+              item.id || item.title.toLowerCase().replace(/\s+/g, "_"),
+          },
+        ],
       })),
     },
+    footer: { text: "Scroll to see more options" },
   },
 });
 
+//
 const buildTemplateMessage = (to, templateName, languageCode = "en_US") => ({
   messaging_product: "whatsapp",
   to,
@@ -50,7 +100,55 @@ const buildTemplateMessage = (to, templateName, languageCode = "en_US") => ({
     language: { code: languageCode },
   },
 });
+// Add to whatsapp.service.js
+const buildListMessage = (to, message) => ({
+  messaging_product: "whatsapp",
+  to,
+  type: "interactive",
+  interactive: {
+    type: "list",
+    header: { type: "text", text: message.header },
+    body: { text: message.body },
+    footer: { text: message.footer },
+    action: {
+      button: message.button.title,
+      sections: message.sections.map((section) => ({
+        title: section.title,
+        rows: section.rows || [
+          {
+            id: section.title.toLowerCase().replace(/\s+/g, "_"),
+            title: section.title,
+            description: section.description,
+          },
+        ],
+      })),
+    },
+  },
+});
 
+const buildQuickReplyMessage = (to, message) => ({
+  messaging_product: "whatsapp",
+  recipient_type: "individual",
+  to,
+  type: "interactive",
+  interactive: {
+    type: "list",
+    body: { text: message.text },
+    action: {
+      button: "Options",
+      sections: [
+        {
+          title: message.text,
+          rows: message.options.map((opt) => ({
+            id: opt.id,
+            title: opt.title,
+            description: opt.description || "",
+          })),
+        },
+      ],
+    },
+  },
+});
 // Core functions
 export const sendTextMessage = async (to, text) => {
   const payload = buildTextMessage(to, text);
@@ -75,10 +173,33 @@ export const broadcastMessage = async (recipients, message) => {
   }
   return results;
 };
-
+export const sendListMessage = async (to, message) => {
+  const payload = buildListMessage(to, message);
+  return sendMessage(payload);
+};
+export const sendCarouselMessage = async (to, items) => {
+  const payload = buildCarouselMessage(to, items);
+  return sendMessage(payload);
+};
 const sendMessage = async (payload) => {
   try {
     const response = await axiosInstance.post("/messages", payload);
+
+    const logMessage = (payload, response) => {
+      console.log(
+        `Outgoing response from system: [${new Date().toISOString()}] `,
+        {
+          to: payload.to,
+          type: payload.type,
+          length: payload.text?.body?.length || 0,
+          status: response.success ? "success" : "failed",
+          messageId: response.messageId,
+        }
+      );
+    };
+
+    logMessage(payload, result);
+    
     return {
       success: true,
       messageId: response.data?.messages?.[0]?.id,
@@ -95,18 +216,24 @@ const sendMessage = async (payload) => {
 
 // Response handler
 export const getAutoResponse = (input) => {
-  const normalized = input.trim().toUpperCase();
+  const normalized = input.trim().toLowerCase();
   const responseMap = {
-    HI: "WELCOME",
-    HELLO: "WELCOME",
-    1: "SERVICES",
-    2: "CONTACT",
-    3: "FAQ",
-    SERVICES: "SERVICES",
-    CONTACT: "CONTACT",
-    FAQ: "FAQ",
+    hi: "welcome",
+    hello: "WELCOME",
+    1: "services",
+    2: "destinations",
+    3: "test_prep",
+    services: "services",
+    destinations: "destinations",
+    tests: "test_prep",
+    contact: "contact",
+    back: "welcome",
   };
-  return responses[responseMap[normalized]] || responses.DEFAULT;
+  const responseKey = responseMap[normalized];
+  if (!responseKey) return responses.fallback;
+
+  const response = responses[responseKey];
+  return response || responses.fallback;
 };
 
 // export const sendWhatsAppMessage = async (phone, message) => {

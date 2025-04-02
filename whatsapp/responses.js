@@ -2,6 +2,7 @@ const responses = {
   welcome: {
     type: "interactive",
     header: "🌍 *Welcome to ViaCerta Abroad!* 🌍",
+    text: "Hello! Welcome to our service. How can I help you today?",
     body: "Your gateway to global education. How can we assist you today?",
     buttons: [
       { id: "services", title: "Our Services" },
@@ -13,7 +14,9 @@ const responses = {
 
   services: {
     type: "list",
+    
     header: "📚 *Our End-to-End Services*",
+    text: "Here are our services:\n1. Service A\n2. Service B\n3. Service C",
     body: "Choose an option for details:",
     sections: [
       {
@@ -72,6 +75,10 @@ const responses = {
         },
       },
     },
+  },
+
+  contact: {
+    text: "You can reach us at:\nPhone: +1234567890\nEmail: contact@example.com"
   },
 
   fallback: {
