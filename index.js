@@ -21,7 +21,8 @@ import { addClient } from "./utils/sseNotification.js";
 import cluster from "cluster";
 import os from "os";
 import process from "process";
-import whatsAppRoute from "./whatsapp/whatsapp.routes.js";
+// import whatsAppRoute from "./whatsapp/whatsapp.routes.js";
+import whattappApiRoute from "./whatsapp-api/routes/whatsappRoutes.js"
 
 cluster.schedulingPolicy = cluster.SCHED_RR; // Set round-robin scheduling policy
 const numCPUs = os.cpus().length;
@@ -91,7 +92,8 @@ app.get("/workers", (req, res) => {
   res.json({ message: `Worker ${process.pid} is handling requests` });
 });
 
-app.use("/api/whatsapp", whatsAppRoute);
+// app.use("/api/whatsapp", whatsAppRoute);
+app.use("/api/whatsapp", whattappApiRoute);
 
 // All your API routes
 app.use("/events", (req, res) => addClient(res));
