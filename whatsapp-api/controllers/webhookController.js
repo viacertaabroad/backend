@@ -1,89 +1,118 @@
 import { messageTemplates } from "../services/messageTemplate.js";
 import { sendMessage } from "../services/whatsappService.js";
+import {
+  responseFlows,
+  conversationStates,
+} from "../responses/responsesConfig.js";
 
-// Response configurations
-const responses = {
-  btn_help: {
-    text: "Here's how we can help:",
-    buttons: [
-      { id: "contact_support", title: "Contact Support" },
-      { id: "faq", title: "View FAQs" },
-    ],
-  },
-  btn_order: {
-    text: "Please select an option:",
-    list: {
-      header: "Order Options",
-      body: "Choose delivery method",
-      sections: [
-        {
-          title: "Delivery Methods",
-          rows: [
-            {
-              id: "express",
-              title: "Express",
-              description: "2-3 business days",
-            },
-            {
-              id: "standard",
-              title: "Standard",
-              description: "5-7 business days",
-            },
-          ],
-        },
-      ],
-    },
-  },
-};
+const userStates = new Map();
+const messageLogs = []; // In-memory store, replace with DB in production
 
 export const handleWebhook = async (req, res) => {
-  // Verify webhook
+  // Verification handshake
   if (req.query["hub.mode"] === "subscribe") {
-    if (req.query["hub.verify_token"] === process.env.WEBHOOK_VERIFY_TOKEN) {
+    if (req.query["hub.verify_token"] === whatsappConfig.webhookVerifyToken) {
+      console.log("Webhook verified successfully");
       return res.send(req.query["hub.challenge"]);
     }
+    console.error("Webhook verification failed");
     return res.sendStatus(403);
   }
 
-  // Process messages
+  // Process incoming message
   const entry = req.body.entry?.[0];
   const message = entry?.changes?.[0]?.value?.messages?.[0];
 
-  if (!message) return res.sendStatus(200);
+  if (!message) {
+    console.log("Empty message received");
+    return res.sendStatus(200);
+  }
 
   const phone = message.from;
+  const currentState = userStates.get(phone);
+  const messageType = message.type;
+  const messageContent =
+    messageType === "text"
+      ? message.text.body
+      : message.interactive?.type || "unknown";
+
+  // Log incoming message
+  messageLogs.push({
+    timestamp: new Date(),
+    phone,
+    direction: "incoming",
+    type: messageType,
+    content: messageContent,
+    state: currentState,
+  });
+
+  console.log(`Incoming ${messageType} from ${phone}:`, messageContent);
 
   try {
-    // Handle button replies
-    if (message.interactive?.type === "button_reply") {
-      const buttonId = message.interactive.button_reply.id;
-      const response = responses[buttonId];
+    // Handle text messages
+    if (messageType === "text") {
+      const text = message.text.body.toLowerCase().trim();
 
-      if (response?.buttons) {
-        await sendMessage(
-          messageTemplates.buttonMessage(
-            phone,
-            null,
-            response.text,
-            response.buttons
-          )
-        );
-      } else if (response?.list) {
-        await sendMessage(
-          messageTemplates.listMessage(
-            phone,
-            response.list.header,
-            response.list.body,
-            "Options",
-            response.list.sections
-          )
-        );
+      if (currentState === conversationStates.awaitingConsultationDetails) {
+        await handleConsultationDetails(phone, text);
+        return res.sendStatus(200);
+      }
+
+      // Keyword-based routing
+      if (text.includes("help"))
+        return handleInteractiveResponse(phone, "help");
+      if (text.includes("hi") || text.includes("hello"))
+        return handleInteractiveResponse(phone, "welcome");
+      if (text.includes("contact"))
+        return handleInteractiveResponse(phone, "contact");
+    }
+
+    // Handle interactive messages
+    if (messageType === "interactive") {
+      const interactiveType = message.interactive.type;
+      const responseKey =
+        interactiveType === "button_reply"
+          ? message.interactive.button_reply.id
+          : interactiveType === "list_reply"
+          ? message.interactive.list_reply.id
+          : null;
+
+      if (responseKey) {
+        return handleInteractiveResponse(phone, responseKey);
       }
     }
 
+    // Fallback for unhandled messages
+    await handleInteractiveResponse(phone, "fallback");
     res.sendStatus(200);
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error("Webhook processing error:", {
+      error: error.message,
+      stack: error.stack,
+      phone,
+      message,
+    });
     res.sendStatus(500);
   }
+};
+
+// Helper function for consultation flow
+async function handleConsultationDetails(phone, text) {
+  // Process consultation details...
+  await sendMessage(
+    messageTemplates.textMessage(
+      phone,
+      "Thank you for your details! Our consultant will contact you shortly."
+    )
+  );
+  userStates.delete(phone);
+}
+
+// Get message logs
+export const getMessageLogs = (req, res) => {
+  res.json({
+    success: true,
+    count: messageLogs.length,
+    logs: messageLogs.slice(-100).reverse(), // Return last 100 messages
+  });
 };

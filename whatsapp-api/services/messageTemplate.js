@@ -1,13 +1,23 @@
 // Button message template
-export const buttonMessage = (to, header, body, buttons) => ({
+
+export const textMessage = (to, text) => ({
+  messaging_product: "whatsapp",
+  recipient_type: "individual",
+  to,
+  type: "text",
+  text: { body: text },
+});
+
+export const buttonMessage = (to, header, body, buttons, footer = null) => ({
   messaging_product: "whatsapp",
   recipient_type: "individual",
   to,
   type: "interactive",
   interactive: {
     type: "button",
-    header: { type: "text", text: header },
+    ...(header && { header: { type: "text", text: header } }),
     body: { text: body },
+    ...(footer && { footer: { text: footer } }),
     action: {
       buttons: buttons.map((btn) => ({
         type: "reply",
@@ -44,8 +54,19 @@ export const listMessage = (to, header, body, buttonText, sections) => ({
   },
 });
 
+export const broadcastMessage = (recipients, message) => ({
+  messaging_product: "whatsapp",
+  recipient_type: "individual",
+  to: recipients,
+  type: "text", // Can be any valid message type
+  text: message,
+});
+
+
 // Alternatively, you can export them together as named exports
 export const messageTemplates = {
+  textMessage,
   buttonMessage,
   listMessage,
+  broadcastMessage,
 };
