@@ -22,12 +22,12 @@ import cluster from "cluster";
 import os from "os";
 import process from "process";
 // import whatsAppRoute from "./whatsapp/whatsapp.routes.js";
-import whattappApiRoute from "./whatsapp-api/routes/whatsappRoutes.js"
+import whattappApiRoute from "./whatsapp-api/routes/whatsappRoutes.js";
 
 cluster.schedulingPolicy = cluster.SCHED_RR; // Set round-robin scheduling policy
 const numCPUs = os.cpus().length;
 const port = process.env.PORT || 8000;
-console.log("number of CPUs: ", numCPUs);
+// console.log("number of CPUs: ", numCPUs);
 
 // if (cluster.isPrimary) {
 //   console.log(`🛠️ Master process ${process.pid} is running`);
@@ -112,7 +112,8 @@ app.use(
 );
 
 server.listen(port, () => {
-  console.log(`🚀 Worker ${process.pid} running on port: ${port}`);
+  console.log(`🚀 Server is running on port: ${port}`);
+  // console.log(`🚀 Worker ${process.pid} running on port: ${port}`);
 });
 
 // Graceful shutdown for worker process

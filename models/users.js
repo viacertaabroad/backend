@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema(
     mobile: {
       type: String,
       // required: [true, "Please enter your phone number"],
-      unique: true, 
+      unique: true,
       sparse: true, // ✅ Allows multiple null values
       // validate: {
       //   validator: function (value) {
@@ -68,6 +68,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
     },
     isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isMobileVerified: {
       type: Boolean,
       default: false,
     },

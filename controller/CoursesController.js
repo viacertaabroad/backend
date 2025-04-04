@@ -1,20 +1,27 @@
+import errorResponse from "../helpers/errorHandler.js";
 import Course from "../models/courses.js";
 
 const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find();
-
-    res.status(200).json({
+    // const courses = await Course.find();
+    const courses = await Course.find().lean();
+    if (courses.length === 0) {
+      return res
+        .status(204) 
+        .end();
+    }
+    return res.status(200).json({
       success: true,
-      totalCourses: courses.length,
-      courses,
+      count: courses.length,
+      data: courses,
     });
   } catch (error) {
     console.error("Error fetching courses:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error.",
-    });
+    // res.status(500).json({
+    //   success: false,
+    //   message: "Internal Server Error.",
+    // });
+    return errorResponse(res, 500, "Failed to fetch courses", error);
   }
 };
 
