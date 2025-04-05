@@ -12,7 +12,18 @@ const newStudent = async (req, res) => {
       description,
     } = req.body;
 
-    const newStudent = new OurStudents({
+    // const newStudent = new OurStudents({
+    //   name,
+    //   university,
+    //   country,
+    //   scholarship,
+    //   scholarshipAmount,
+    //   course,
+    //   description,
+    // });
+
+    // await newStudent.save();
+    const newStudent = await OurStudents.create({
       name,
       university,
       country,
@@ -22,8 +33,6 @@ const newStudent = async (req, res) => {
       description,
     });
 
-    await newStudent.save();
-
     res.status(201).json({
       success: true,
       message: "Student added successfully",
@@ -31,23 +40,25 @@ const newStudent = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error adding student:", error);
-    res.status(400).json({
-      success: false,
-      message: "Error adding student",
-      error: error.message,
-    });
+    return errorResponse(res, 500, "Error adding student", error, "newStudent")
+    // res.status(400).json({
+    //   success: false,
+    //   message: "Error adding student",
+    //   error: error.message,
+    // });
   }
 };
 
 const getStudents = async (req, res) => {
   try {
-    const students = await OurStudents.find();
+    const students = await OurStudents.find().lean();
     res
       .status(200)
       .json({ success: true, totalStudents: students.length, students });
   } catch (error) {
     console.error("❌ Error fetching students:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return errorResponse(res, 500, "Error fetching students", error, "getStudents");
+    // res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -86,9 +97,10 @@ const updateStudent = async (req, res) => {
     );
 
     if (!updatedStudent) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Student not found." });
+      return errorResponse(res, 404, "Student not found");
+      // return res
+      //   .status(404)
+      //   .json({ success: false, message: "Student not found." });
     }
 
     res.status(200).json({
@@ -98,7 +110,8 @@ const updateStudent = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error updating student:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return errorResponse(res, 500, "Error updating student", error, "updateStudent");
+    // res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -107,17 +120,19 @@ const removeStudent = async (req, res) => {
     const { id } = req.body;
 
     if (!id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Student ID is required to delete." });
+      return errorResponse(res, 400, "Student ID is required to delete");
+      // return res
+      //   .status(400)
+      //   .json({ success: false, message: "Student ID is required to delete." });
     }
 
     const deletedStudent = await OurStudents.findByIdAndDelete(id);
 
     if (!deletedStudent) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Student not found." });
+      return errorResponse(res, 404, "Student not found");
+      // return res
+      //   .status(404)
+      //   .json({ success: false, message: "Student not found." });
     }
 
     res.status(200).json({
@@ -127,7 +142,8 @@ const removeStudent = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error deleting student:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return errorResponse(res, 500, "Error deleting student", error, "removeStudent");
+    // res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 

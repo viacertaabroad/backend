@@ -2,21 +2,61 @@ import User from "../../models/users.js";
 
 const allUsers = async (req, res) => {
   try {
-    const users = await User.find();
-    const verifiedUsers = users.filter((user) => user.isVerified);
-    const unverifiedUsers = users.filter((user) => !user.isVerified);
+    // const users = await User.find();
+    // const verifiedUsers = users.filter((user) => user.isVerified);
+    // const unverifiedUsers = users.filter((user) => !user.isVerified);
 
-    res.status(200).json({
+    // res.status(200).json({
+    //   success: true,
+    //   totalUsers: users.length,
+    //   totalVerifiedUsers: verifiedUsers.length,
+    //   totalUnverifiedUsers: unverifiedUsers.length,
+    //   verifiedUsers,
+    //   unverifiedUsers,
+    // });
+
+    // Get verified and unverified users in a single query using MongoDB aggregation
+    const result = await User.aggregate([
+      {
+        $facet: {
+          verifiedUsers: [
+            { $match: { isVerified: true } },
+            { $project: { password: 0, __v: 0 } }, // Exclude sensitive fields
+          ],
+          unverifiedUsers: [
+            { $match: { isVerified: false } },
+            { $project: { password: 0, __v: 0 } },
+          ],
+          totalCount: [{ $count: "count" }],
+        },
+      },
+      {
+        $project: {
+          verifiedUsers: 1,
+          unverifiedUsers: 1,
+          totalUsers: { $arrayElemAt: ["$totalCount.count", 0] },
+          totalVerifiedUsers: { $size: "$verifiedUsers" },
+          totalUnverifiedUsers: { $size: "$unverifiedUsers" },
+        },
+      },
+    ]);
+
+    const data = result[0] || {
+      verifiedUsers: [],
+      unverifiedUsers: [],
+      totalUsers: 0,
+      totalVerifiedUsers: 0,
+      totalUnverifiedUsers: 0,
+    };
+
+    return res.status(200).json({
       success: true,
-      totalUsers: users.length,
-      totalVerifiedUsers: verifiedUsers.length,
-      totalUnverifiedUsers: unverifiedUsers.length,
-      verifiedUsers,
-      unverifiedUsers,
+      ...data,
     });
   } catch (error) {
     console.error("❌ Error fetching users:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return errorResponse(res, 500, "Error fetching users", error, "allUsers");
+    // res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -25,9 +65,10 @@ const updateUser = async (req, res) => {
     const { id, name, email, mobile, address, role } = req.body;
 
     if (!id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User ID is required." });
+      return errorResponse(res, 400, "User ID is required");
+      // return res
+      //   .status(400)
+      //   .json({ success: false, message: "User ID is required." });
     }
 
     const existingUser = await User.findOne({
@@ -45,13 +86,14 @@ const updateUser = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { name, email, mobile, address, role },
-      { new: true }
+      { new: true, select: "-password -__v" }
     );
 
     if (!updatedUser) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found." });
+      return errorResponse(res, 404, "User not found");
+      // return res
+      //   .status(404)
+      //   .json({ success: false, message: "User not found." });
     }
 
     res.status(200).json({
@@ -61,11 +103,12 @@ const updateUser = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error updating user:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    return errorResponse(res, 500, "Error updating user", error, "updateUser");
+    // res.status(500).json({
+    //   success: false,
+    //   message: "Internal Server Error",
+    //   error: error.message,
+    // });
   }
 };
 
@@ -74,9 +117,10 @@ const removeUser = async (req, res) => {
     const { id } = req.body;
 
     if (!id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User ID is required." });
+      return errorResponse(res, 400, "User ID is required");
+      // return res
+      //   .status(400)
+      //   .json({ success: false, message: "User ID is required." });
     }
 
     const deletedUser = await User.findByIdAndDelete(id);
@@ -94,11 +138,12 @@ const removeUser = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error deleting user:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    return errorResponse(res, 500, "Error deleting user", error, "removeUser");
+    // res.status(500).json({
+    //   success: false,
+    //   message: "Internal Server Error",
+    //   error: error.message,
+    // });
   }
 };
 

@@ -1,3 +1,4 @@
+import errorResponse from "../helpers/errorHandler.js";
 import OurStudents from "../models/ourStudents.js";
 
 const allStudents = async (req, res) => {
@@ -21,10 +22,11 @@ const allStudents = async (req, res) => {
       // }))
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message || "An error occurred",
-    });
+    // res.status(400).json({
+    //   success: false,
+    //   error: error.message || "An error occurred",
+    // });
+    return errorResponse(res, 400, "An error occurred");
   }
 };
 

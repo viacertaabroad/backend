@@ -14,52 +14,56 @@ const googleLogin = async (req, res) => {
     oauth2client.setCredentials(tokenResponse.tokens);
 
     const googleUser = await axios.get(
-      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googlRes.tokens.access_token}`,
+      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokenResponse.tokens.access_token}`,
       {
         headers: {
-          Authorization: `Bearer ${googlRes.tokens.id_token}`,
+          Authorization: `Bearer ${tokenResponse.tokens.id_token}`,
         },
       }
     );
 
     const { email, name, picture } = googleUser.data;
 
-    // let user = await User.findOne({ email });
-    // if (!user) {
-    //   user = await User.create({
-    //     name,
-    //     email,
-    //     avatar: picture,
-    //     isVerified: true,
-    //   });
-    // } else {
-    //   user.isVerified = true;
-    //   await user.save();
-    // }
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        avatar: picture,
+        isVerified: true,
+      });
+    } else {
+      if(!user.avatar){
+        user.avatar= picture
+      }
+      user.isVerified = true;
+      user.lastLogin.by = 'google';
+      await user.save();
+    }
 
     // Find or create user
-    const user = await User.findOneAndUpdate(
-      { email },
-      {
-        $set: {
-          name,
-          avatar: picture,
-          isVerified: true,
-          lastLogin: new Date(),
-        },
-        $setOnInsert: {
-          // These fields only set if creating new user
-          email,
-          role: "user",
-          loginMethod: "google",
-        },
-      },
-      {
-        upsert: true,
-        new: true,
-        lean: true,
-      }
-    );
+    // const user = await User.findOneAndUpdate(
+    //   { email },
+    //   {
+    //     $set: {
+    //       name,
+    //       avatar: picture,
+    //       isVerified: true,
+    //       lastLogin: new Date(),
+    //     },
+    //     $setOnInsert: {
+    //       // These fields only set if creating new user
+    //       email,
+    //       role: "user",
+    //       loginMethod: "google",
+    //     },
+    //   },
+    //   {
+    //     upsert: true,
+    //     new: true,
+    //     lean: true,
+    //   }
+    // );
 
     generateToken(user, res);
 
@@ -68,13 +72,14 @@ const googleLogin = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `${name} logged in successfully`,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        role: user.role,
-      },
+      user,
+      // data: {
+      //   id: user._id,
+      //   name: user.name,
+      //   email: user.email,
+      //   avatar: user.avatar,
+      //   role: user.role,
+      // },
     });
 
     // console.log(`${user.name} : Google log-in success`);

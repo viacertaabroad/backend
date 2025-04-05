@@ -1,3 +1,4 @@
+import errorResponse from "../../helpers/errorHandler.js";
 import Blog from "../../models/blog.js";
 
 const createBlog = async (req, res) => {
@@ -5,13 +6,15 @@ const createBlog = async (req, res) => {
     const { title, author, imageUrl, intro, description } = req.body;
 
     if (!title || !imageUrl) {
-      return res.status(400).json({
-        success: false,
-        message: "Title and image URL are required.",
-      });
+      // return res.status(400).json({
+      //   success: false,
+      //   message: "Title and image URL are required.",
+      // });
+      errorResponse(res, 400, "Title and image URL are required.");
     }
 
-    const newBlog = new Blog({
+    // Create and save blog in one operation
+    const newBlog = await Blog.create({
       title,
       author,
       imageUrl,
@@ -19,7 +22,15 @@ const createBlog = async (req, res) => {
       description,
     });
 
-    await newBlog.save();
+    // const newBlog = new Blog({
+    //   title,
+    //   author,
+    //   imageUrl,
+    //   intro,
+    //   description,
+    // });
+
+    // await newBlog.save();
 
     res.status(201).json({
       success: true,
@@ -28,17 +39,24 @@ const createBlog = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error creating blog:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    errorResponse(
+      res,
+      500,
+      "Internal Server Error",
+      error,
+      "Error creating blog"
+    );
+    // res.status(500).json({
+    //   success: false,
+    //   message: "Internal Server Error",
+    //   error: error.message,
+    // });
   }
 };
 
 const getAllBlog = async (req, res) => {
   try {
-    const blogs = await Blog.find();
+    const blogs = await Blog.find().lean();
     res.status(200).json({
       success: true,
       totalBlogs: blogs.length,
@@ -46,11 +64,12 @@ const getAllBlog = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred.",
-      error: error.message,
-    });
+    return errorResponse(res, 500, "error in fetching blogs");
+    // res.status(500).json({
+    //   success: false,
+    //   message: "An error occurred.",
+    //   error: error.message,
+    // });
   }
 };
 
@@ -59,9 +78,10 @@ const updateBlog = async (req, res) => {
     const { id, title, author, imageUrl, intro, description } = req.body;
 
     if (!id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Blog ID is required to update." });
+      // return res
+      //   .status(400)
+      //   .json({ success: false, message: "Blog ID is required to update." });
+      return errorResponse(res, 400, "Blog ID is required to update.");
     }
 
     const updatedBlog = await Blog.findByIdAndUpdate(
@@ -71,9 +91,10 @@ const updateBlog = async (req, res) => {
     );
 
     if (!updatedBlog) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Blog not found." });
+      return errorResponse(res, 404, "Blog not found.");
+      // return res
+      //   .status(404)
+      //   .json({ success: false, message: "Blog not found." });
     }
 
     res.status(200).json({
@@ -83,11 +104,12 @@ const updateBlog = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred.",
-      error: error.message,
-    });
+    return errorResponse(res, 500, "Internal error.", error, "on updated blog");
+    // res.status(500).json({
+    //   success: false,
+    //   message: "An error occurred.",
+    //   error: error.message,
+    // });
   }
 };
 
@@ -96,17 +118,19 @@ const deleteBlog = async (req, res) => {
     const { id } = req.body;
 
     if (!id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Blog ID is required to delete." });
+      return errorResponse(res, 500, "Blog ID is required to delete.");
+      // return res
+      //   .status(400)
+      //   .json({ success: false, message: "Blog ID is required to delete." });
     }
 
     const blog = await Blog.findByIdAndDelete(id);
 
     if (!blog) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Blog not found." });
+      return errorResponse(res, 404, "Blog not found.");
+      // return res
+      //   .status(404)
+      //   .json({ success: false, message: "Blog not found." });
     }
 
     res
@@ -114,11 +138,12 @@ const deleteBlog = async (req, res) => {
       .json({ success: true, message: "Blog deleted successfully.", blog });
   } catch (error) {
     console.error("❌ Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred.",
-      error: error.message,
-    });
+    return errorResponse(res, 500, "Internal error.", error, "on delete blog");
+    // res.status(500).json({
+    //   success: false,
+    //   message: "An error occurred.",
+    //   error: error.message,
+    // });
   }
 };
 

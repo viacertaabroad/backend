@@ -174,11 +174,27 @@ const verify = async (req, res) => {
     // await user.save();
 
     // Update only necessary fields
+    // await User.updateOne(
+    //   { _id: user._id },
+    //   {
+    //     isVerified: true,
+    //     $unset: { otp: "", otpExpiry: "", deleteAt: "" },
+    //   }
+    // );
     await User.updateOne(
       { _id: user._id },
       {
-        isVerified: true,
-        $unset: { otp: "", otpExpiry: "", deleteAt: "" },
+        $set: {
+          isVerified: true,
+          lastLogin: {
+            by: "password",
+          },
+        },
+        $unset: {
+          otp: "",
+          otpExpiry: "",
+          deleteAt: "",
+        },
       }
     );
 
@@ -262,7 +278,15 @@ const login = async (req, res) => {
         "Regenerate Otp Or Sign-Up again."
       );
     }
-
+    if (!user.password) {
+      return errorResponse(
+        res,
+        403,
+        "Password not set. Try Google Login.",
+        null,
+        "Login with Google and update your Profile Or Try Reset Password."
+      );
+    }
     if (isEmail) {
       if (!password) {
         // return res.status(400).json({
@@ -279,6 +303,9 @@ const login = async (req, res) => {
         //   .json({ success: false, message: "Invalid credentials." });
         return errorResponse(res, 401, "Invalid credentials.");
       }
+      user.lastLogin.by = "password";
+      await user.save();
+
     } else if (isPhoneNumber) {
       const otp = crypto.randomInt(100000, 999999).toString(); // Generate 6-digit OTP
       const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 min validity
