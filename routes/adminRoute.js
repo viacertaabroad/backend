@@ -50,5 +50,24 @@ route.put("/users/update", updateUser); // working
 route.delete("/users/remove", removeUser); //working
 
 // ------------------
+// handling in ticket routes
+
+// router.post("/tickets", createTicket);
+
+// router.get(
+//   "/admin/tickets",
+//   isAuthenticatedUser,
+//   authorizedRole(["admin"]),
+//   getTickets
+// );
+
+// router.put(
+//   "/admin/tickets/:id",
+//   isAuthenticatedUser,
+//   authorizedRole(["admin"]),
+//   updateTicket
+// );
+
+// ------------------
 
 export default route;

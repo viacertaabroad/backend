@@ -15,6 +15,7 @@ import {
   adminRoutes,
   googleAuthRoute,
 } from "./helpers/indexRouteImports.js";
+import ticketRoutes from "./routes/ticketRoute.js"
 import cookieParser from "cookie-parser";
 import { authorizedRole, isAuthenticatedUser } from "./middleware/auth.js";
 import { addClient } from "./utils/sseNotification.js";
@@ -110,6 +111,7 @@ app.use(
   authorizedRole(["admin"]),
   adminRoutes
 );
+app.use("/api/tickets",ticketRoutes)
 
 server.listen(port, () => {
   console.log(`🚀 Server is running on port: ${port}`);

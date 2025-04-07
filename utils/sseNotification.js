@@ -23,3 +23,31 @@ export const sendNewRoomNotification = (room) => {
     );
   });
 };
+
+// New ticket notifications
+export const sendTicketNotification = (ticket) => {
+  clients.forEach((client) => {
+    client.write(
+      `data: ${JSON.stringify({
+        type: "NEW_TICKET",
+        message: `New ${ticket.category} ticket created`,
+        clickableMessage: "View Ticket",
+        redirectUrl: `/admin/tickets/${ticket._id}`,
+        data: ticket,
+      })}\n\n`
+    );
+  });
+};
+
+
+export const sendTicketUpdate = (ticket) => {
+  clients.forEach((client) => {
+    client.write(`data: ${JSON.stringify({
+      type: "TICKET_UPDATE",
+      message: `Ticket #${ticket._id} updated to ${ticket.status}`,
+      clickableMessage: "Check Update",
+      redirectUrl: `/admin/tickets/${ticket._id}`,
+      data: ticket
+    })}\n\n`);
+  });
+};
