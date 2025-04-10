@@ -15,7 +15,7 @@ import {
   adminRoutes,
   googleAuthRoute,
 } from "./helpers/indexRouteImports.js";
-import ticketRoutes from "./routes/ticketRoute.js"
+import ticketRoutes from "./routes/ticketRoute.js";
 import cookieParser from "cookie-parser";
 import { authorizedRole, isAuthenticatedUser } from "./middleware/auth.js";
 import { addClient } from "./utils/sseNotification.js";
@@ -96,8 +96,9 @@ app.get("/workers", (req, res) => {
 // app.use("/api/whatsapp", whatsAppRoute);
 app.use("/api/whatsapp", whattappApiRoute);
 
-// All your API routes
 app.use("/events", (req, res) => addClient(res));
+// /////////////////////////
+// All   API routes
 app.use("/auth", googleAuthRoute);
 app.use("/api/user", userRoutes);
 app.use("/api/blogs", blogRoutes);
@@ -111,13 +112,14 @@ app.use(
   authorizedRole(["admin"]),
   adminRoutes
 );
-app.use("/api/tickets",ticketRoutes)
+app.use("/api/tickets", ticketRoutes);
 
 server.listen(port, () => {
   console.log(`🚀 Server is running on port: ${port}`);
   // console.log(`🚀 Worker ${process.pid} running on port: ${port}`);
 });
 
+// /////////////////////////////////////////////////
 // Graceful shutdown for worker process
 process.on("SIGTERM", () => {
   console.log(`❌ Worker ${process.pid} shutting down...`);

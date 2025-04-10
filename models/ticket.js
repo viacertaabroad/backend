@@ -59,6 +59,21 @@ const ticketSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now },
     },
   ],
+  // Notification tracking
+  notification: {
+    user: {
+      hasUnread: { type: Boolean, default: false },
+      lastNotifiedAt: { type: Date },
+    },
+    admin: {
+      hasUnread: { type: Boolean, default: true },
+      lastNotifiedAt: { type: Date },
+      viewedBy: {
+        adminId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        viewedAt: { type: Date },
+      },
+    },
+  },
 });
 
 const Ticket = mongoose.model("ticket", ticketSchema);

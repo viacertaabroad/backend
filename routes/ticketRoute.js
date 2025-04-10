@@ -1,21 +1,25 @@
 import express from "express";
 import {
+  addAdminMessage,
   addUserMessage,
+  archiveMyTicket,
   createTicket,
   getmyTicket,
   getTickets,
   updateTicket,
 } from "../controller/TicketController.js";
 import { isAuthenticatedUser, authorizedRole } from "../middleware/auth.js";
+import { sendTicketNotification } from "../utils/sseNotification.js";
 
 const router = express.Router();
 
 // Public route (no login needed)
-router.post("/create-guest", createTicket);
-router.get("/myticket",isAuthenticatedUser,getmyTicket);
-// Private route (login needed)
+// router.post("/create-guest", createTicket);
+
 router.post("/create", isAuthenticatedUser, createTicket);
+router.get("/myticket", isAuthenticatedUser, getmyTicket);
 router.put("/addMessage/:id", isAuthenticatedUser, addUserMessage);
+router.put("/archive/:id", isAuthenticatedUser, archiveMyTicket);
 
 // Admin routes
 router.get(
@@ -26,10 +30,16 @@ router.get(
 );
 
 router.put(
-  "/admin-update/:id",
+  "/admin-update/ticket-status/:id",
   isAuthenticatedUser,
   authorizedRole(["admin"]),
   updateTicket
+);
+router.put(
+  "/admin-update/ticket-message/:id",
+  isAuthenticatedUser,
+  authorizedRole(["admin"]),
+  addAdminMessage
 );
 
 export default router;

@@ -1,9 +1,15 @@
 import Ticket from "../models/ticket.js";
 import User from "../models/users.js";
 import { sendEmail } from "../utils/sendMail.js";
-import { sendTicketNotification } from "../utils/sseNotification.js";
+import {
+  notifyMessageToAdmin,
+  notifyMessageToUser,
+  sendTicketNotification,
+  sendTicketUpdateToUser,
+} from "../utils/sseNotification.js";
+// import { notifyNewMessage, sendTicketNotification } from "../utils/sseNotification.js";
 
-// Creating Ticket (works for both logged-in and guest users)
+ 
 export const createTicket = async (req, res) => {
   try {
     const { title, description, category } = req.body;
@@ -30,18 +36,24 @@ export const createTicket = async (req, res) => {
     }
 
     const ticket = new Ticket(ticketData);
-    await ticket.save();
+    // await ticket.save();
 
-    // Uncomment these when ready
-    // await sendEmail(
-    //   req.user ? req.user.email : email,
-    //   `New Support Ticket #${ticket._id}`,
-    //   `Your ticket "${title}" has been received.`
-    // );
+    const data = {
+      userName: req.user.name,
+      userEmail: req.user.email,
+      userMobile: req.user.mobile,
+      ticket,
+    };
+    // console.log("data", data);
+
+    // sendEmail("ashvarygidian1996@gmail.com", data, "newTicket");
+    //  sendEmail("ashvarygidian1996@gmail.com", data, "newTicketUserSide");
 
     // await sendTicketNotification(ticket);
+    await sendTicketNotification(ticket);
 
     res.status(201).json(ticket);
+ 
   } catch (error) {
     res.status(400).json({
       error: "Ticket creation failed",
@@ -53,25 +65,30 @@ export const createTicket = async (req, res) => {
 export const getmyTicket = async (req, res) => {
   try {
     const userId = req.user._id;
+    const { archived = false } = req.query;
 
-    const tickets = await Ticket.find({
-      $or: [
-        { user: userId },
-        { "guestUser.email": req.user.email }, // If guests later register
-      ],
-    })
-      .sort({ createdAt: -1 }) // Newest first
-      .populate({ path: "user", model: "users", select: "name email -_id" }); // Only if user exists
+    const query = {
+      $or: [{ user: userId }, { "guestUser.email": req.user.email }],
+    };
 
-    if (!tickets.length) {
-      return res.status(404).json({
-        message: "No tickets found for your account",
-      });
+    // If not including archived, filter them out
+    if (archived === "false" || archived === false) {
+      query.status = { $ne: "archived" };
     }
 
-    res.json({ total: tickets.length, tickets });
+    const tickets = await Ticket.find(query)
+      .sort({ createdAt: -1 })
+      .populate({ path: "user", model: "users", select: "name email -_id" });
+
+    res.json({
+      success: true,
+      total: tickets.length,
+      tickets,
+      archived: archived === "true" || archived === true,
+    });
   } catch (error) {
     res.status(500).json({
+      success: false,
       error: "Failed to fetch tickets",
       details: error.message,
     });
@@ -104,10 +121,10 @@ export const addUserMessage = async (req, res) => {
     }
 
     // Prevent adding messages to closed tickets
-    if (ticket.status === "closed") {
+    if (ticket.status === "closed" || ticket.status === "archived") {
       return res.status(400).json({
         error:
-          "This ticket is closed. Please create a new ticket for further assistance.",
+          "This ticket is closed or archived. Please create a new ticket for further assistance.",
       });
     }
 
@@ -124,31 +141,23 @@ export const addUserMessage = async (req, res) => {
     }
 
     ticket.updatedAt = new Date();
-    await ticket.save();
+    // await ticket.save();
 
-    // // Notifications
-    // if (process.env.NODE_ENV === "production") {
-    //   try {
-    //     // Notify admin
-    //     await sendTicketNotification(ticket);
+    notifyMessageToAdmin(ticket, message);
 
-    //     // Send email confirmation to user
-    //     await sendEmail(
-    //       req.user.email,
-    //       `Message added to Ticket #${ticket._id}`,
-    //       `Your message has been added to ticket "${ticket.title}".\n\nMessage: ${message}`
-    //     );
+    const data = {
+      ticketId: ticket._id,
+      userName: req.user.name,
+      ticketStatus: ticket.status,
+      userMessage: message,
+    };
+    // await sendEmail(
+    //   "ashvarygidian1996@gmail.com",
+    //   data,
+    //   "ticketNewMessageAdmin"
+    // );
 
-    //     // Notify admin via email
-    //     await sendEmail(
-    //       process.env.ADMIN_EMAIL,
-    //       `New reply on Ticket #${ticket._id}`,
-    //       `User replied: "${message}"\n\nTicket status: ${ticket.status}`
-    //     );
-    //   } catch (emailError) {
-    //     console.error("Notification email failed:", emailError);
-    //   }
-    // }
+    //
 
     res.json({
       success: true,
@@ -190,10 +199,49 @@ export const getTickets = async (req, res) => {
   });
 };
 
-// Update Ticket Status
+//Admin message &
+export const addAdminMessage = async (req, res) => {
+  const { id } = req.params;
+  const { message } = req.body;
+
+  const ticket = await Ticket.findById(id);
+  if (!ticket) return res.status(404).json({ error: "Ticket not found" });
+
+  if (message) {
+    ticket.messages.push({
+      text: message,
+      sender: "admin",
+    });
+
+    notifyMessageToUser(ticket, message);
+  }
+
+  ticket.updatedAt = new Date();
+
+  await ticket.save();
+
+  // notifyNewMessage(ticket, message, true);
+  // notifyStatusChange (ticket, ticket.status);
+  //
+  // const userEmail = ticket.user
+  //   ? (await User.findById(ticket.user)).email
+  //   : ticket.guestUser.email;
+  // // Real-time notification to user if logged in
+  // if (ticket.user) {
+  //   notifyUserNewMessage(ticket.user.toString(), ticket, message);
+  // }
+  // Email notification to user
+  const data = { ticketId: ticket._id, message, ticketStatus: ticket.status };
+  // await sendEmail(userEmail, data, "supportNewMessagetoUser");
+
+  //
+
+  res.json(ticket);
+};
+// admin Update Ticket Status
 export const updateTicket = async (req, res) => {
   const { id } = req.params;
-  const { status, message } = req.body;
+  const { status } = req.body;
 
   const ticket = await Ticket.findById(id);
   if (!ticket) return res.status(404).json({ error: "Ticket not found" });
@@ -202,34 +250,70 @@ export const updateTicket = async (req, res) => {
   if (status) {
     ticket.status = status;
     if (status === "closed") ticket.closedAt = new Date();
-  }
-
-  // Add admin reply
-  if (message) {
-    ticket.messages.push({
-      text: message,
-      sender: "admin",
-    });
-
-    // Email notification to user
-    // const userEmail = ticket.user?.email || ticket.guestUser.email;
-    // await sendEmail(
-    //   userEmail,
-    //   `Update on Ticket #${ticket._id}`,
-    //   `Admin replied: "${message}"`
-    // );
+    sendTicketUpdateToUser(ticket);
   }
 
   ticket.updatedAt = new Date();
+
   await ticket.save();
 
-  // Real-time update
-  // addClient.emit("ticketUpdated", ticket);
+  // const data = { ticketId: ticket._id, ticketStatus: ticket.status };
+  // await sendEmail(userEmail, data, "supportNewMessagetoUser");
 
   res.json(ticket);
 };
 
-// Archive Old Tickets (Cron Job)
+// Archive my Ticket
+export const archiveMyTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Only allow logged-in users
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const ticket = await Ticket.findById(id);
+
+    if (!ticket) {
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    // Authorization check - only ticket owner can archive
+    if (!ticket.user || !ticket.user.equals(req.user._id)) {
+      return res.status(403).json({ error: "Unauthorized access to ticket" });
+    }
+
+    // Only allow archiving of resolved or closed tickets
+    if (ticket.status === "archived") {
+      return res.status(400).json({
+        error: "Ticket alread Archived.",
+      });
+    } else if (!["resolved", "closed"].includes(ticket.status)) {
+      return res.status(400).json({
+        error: "Only resolved or closed tickets can be archived",
+      });
+    }
+
+    ticket.status = "archived";
+    ticket.updatedAt = new Date();
+    await ticket.save();
+
+    res.json({
+      success: true,
+      message: "Ticket archived successfully",
+      ticket,
+    });
+  } catch (error) {
+    console.error("Error archiving ticket:", error);
+    res.status(500).json({
+      error: "Failed to archive ticket",
+      details: error.message,
+    });
+  }
+};
+
+// Archive Old Tickets (Cron Job will be implementd to trigger this)
 export const archiveTickets = async () => {
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);

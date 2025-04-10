@@ -24,7 +24,7 @@ function GoogleLogin() {
             "user-info",
             JSON.stringify({ email, name, avatar })
           );
-
+       
           console.log("User logged in:", data.user);
           navigate("/dashboard");
         }
