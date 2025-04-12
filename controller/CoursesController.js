@@ -3,7 +3,7 @@ import Course from "../models/courses.js";
 
 const getCourses = async (req, res) => {
   try {
-    // const courses = await Course.find();
+ 
     const courses = await Course.find().lean();
     if (courses.length === 0) {
       return res
@@ -17,10 +17,7 @@ const getCourses = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching courses:", error);
-    // res.status(500).json({
-    //   success: false,
-    //   message: "Internal Server Error.",
-    // });
+  
     return errorResponse(res, 500, "Failed to fetch courses", error);
   }
 };

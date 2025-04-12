@@ -42,11 +42,10 @@ export const createTicket = async (req, res) => {
     };
     // console.log("data", data);
 
-    // sendEmail("ashvarygidian1996@gmail.com", data, "newTicket");
-    //  sendEmail("ashvarygidian1996@gmail.com", data, "newTicketUserSide");
-
  
     await sendTicketNotification(ticket);
+    
+    sendEmail("ashvarygidian1996@gmail.com", data, "newTicket");
 
     res.status(201).json(ticket);
   } catch (error) {
@@ -153,19 +152,7 @@ export const addUserMessage = async (req, res) => {
 
     notifyMessageToAdmin(ticket, message);
 
-    const data = {
-      ticketId: ticket._id,
-      userName: req.user.name,
-      ticketStatus: ticket.status,
-      userMessage: message,
-    };
-    // await sendEmail(
-    //   "ashvarygidian1996@gmail.com",
-    //   data,
-    //   "ticketNewMessageAdmin"
-    // );
-
-    //
+    
 
     res.json({
       success: true,
@@ -234,9 +221,7 @@ export const addAdminMessage = async (req, res) => {
   await ticket.save();
  
   const data = { ticketId: ticket._id, message, ticketStatus: ticket.status };
-  // await sendEmail(userEmail, data, "supportNewMessagetoUser");
-
-  //
+ 
 
   res.json(ticket);
 };
@@ -260,8 +245,7 @@ export const updateTicket = async (req, res) => {
 
   await ticket.save();
 
-  // const data = { ticketId: ticket._id, ticketStatus: ticket.status };
-  // await sendEmail(userEmail, data, "supportNewMessagetoUser");
+ 
 
   res.json(ticket);
 };

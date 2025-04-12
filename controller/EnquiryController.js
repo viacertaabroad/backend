@@ -8,25 +8,18 @@ const createEnquiry = async (req, res) => {
     const { name, email, mobile } = req.body;
 
     if (!name || !email || !mobile) {
-      // return res.status(400).json({
-      //   success: false,
-      //   message: "All fields are required",
-      // });
+    
 
       return errorResponse(res, 400, "Name, email and mobile are required");
     }
 
     const existingUser = await Enquiry_Form.findOne({ email });
     if (existingUser) {
-      // return res.status(409).json({
-      //   success: false,
-      //   message: "User has already booked counseling.",
-      // });
+   
       return errorResponse(res, 409, "User has already booked counseling");
     }
 
-    // const user = new Enquiry_Form({ name, email, mobile });
-    // await user.save();
+ 
 
     const newEnquiry = await Enquiry_Form.create({ name, email, mobile });
 
@@ -55,10 +48,7 @@ const createEnquiry = async (req, res) => {
     });
   } catch (error) {
     console.error("Server error:", error);
-    // res.status(500).json({
-    //   success: false,
-    //   message: "Internal Server Error",
-    // });
+  
     return errorResponse(res, 500, "Failed to create enquiry", error);
   }
 };
@@ -104,10 +94,7 @@ const getAllEnquires = async (req, res) => {
     });
   } catch (error) {
     console.error("Server error:", error);
-    // res.status(500).json({
-    //   success: false,
-    //   message: "Internal Server Error",
-    // });
+  
     return errorResponse(res, 500, "Failed to fetch enquiries", error);
   }
 };

@@ -24,10 +24,7 @@ const newCourse = async (req, res) => {
       !tuitionFeesOnCampus ||
       !durationOnCampus
     ) {
-      // return res.status(400).json({
-      //   success: false,
-      //   message: "All fields are required except imageUrl.",
-      // });
+    
       return errorResponse(
         res,
         400,
@@ -39,23 +36,9 @@ const newCourse = async (req, res) => {
 
     if (existingCourse) {
       return errorResponse(res, 409, "Course already exists.");
-      // return res
-      //   .status(409)
-      //   .json({ success: false, message: "Course already exists." });
+      
     }
-
-    // const newCourse = new Course({
-    //   name,
-    //   admissionClosingDate,
-    //   universityName,
-    //   destinationCountry,
-    //   postStudyWorkVisaEligibility,
-    //   tuitionFeesOnCampus,
-    //   durationOnCampus,
-    //   imageUrl,
-    // });
-
-    // await newCourse.save();
+ 
 
     const newCourse = await Course.create({
       name,
@@ -82,12 +65,7 @@ const newCourse = async (req, res) => {
       error,
       "creating course"
     );
-     // res.status(500).json({
-  //   success: false,
-  //   message: "Internal Server Error.",
-  //   error: error.message,
-  // });
-  // }
+    
   }
  
 };
@@ -101,7 +79,6 @@ const getAllCourses = async (req, res) => {
   } catch (error) {
     console.error("❌ Error fetching courses:", error);
     return errorResponse(res, 500, "Internal Server Error", error, "fetching courses");
-    // res.status(500).json({ success: false, message: "Internal Server Error." });
   }
 };
 
@@ -110,9 +87,7 @@ const updateCourses = async (req, res) => {
     const { id, ...updateData } = req.body;
 
     if (!id) {
-      // return res
-      //   .status(400)
-      //   .json({ success: false, message: "Course ID is required." });
+     
         return errorResponse(res, 400, "Course ID is required.");
     }
 
@@ -122,9 +97,7 @@ const updateCourses = async (req, res) => {
 
     if (!updatedCourse) {
       return errorResponse(res, 404, "Course not found.");
-      // return res
-      //   .status(404)
-      //   .json({ success: false, message: "Course not found." });
+      
     }
 
     res.status(200).json({
@@ -135,7 +108,7 @@ const updateCourses = async (req, res) => {
   } catch (error) {
     console.error("❌ Error updating course:", error);
     return errorResponse(res, 500, "Internal Server Error", error, "updating course");
-    // res.status(500).json({ success: false, message: "Internal Server Error." });
+    
   }
 };
 
@@ -145,18 +118,14 @@ const deleteCourse = async (req, res) => {
 
     if (!id) {
       return errorResponse(res, 400, "Course ID is required.");
-      // return res
-      //   .status(400)
-      //   .json({ success: false, message: "Course ID is required." });
+      
     }
 
     const deletedCourse = await Course.findByIdAndDelete(id);
 
     if (!deletedCourse) {
       return errorResponse(res, 404, "Course not found.");
-      // return res
-      //   .status(404)
-      //   .json({ success: false, message: "Course not found." });
+      
     }
 
     res.status(200).json({
@@ -167,8 +136,7 @@ const deleteCourse = async (req, res) => {
   } catch (error) {
     console.error("❌ Error deleting course:", error);
     return errorResponse(res, 500, "Internal Server Error", error, "deleting course");
-    // res.status(500).json({ success: false, message: "Internal Server Error." });
-  }
+   }
 };
 
 export { newCourse, getAllCourses, updateCourses, deleteCourse };

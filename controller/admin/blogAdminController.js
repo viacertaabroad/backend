@@ -6,10 +6,7 @@ const createBlog = async (req, res) => {
     const { title, author, imageUrl, intro, description } = req.body;
 
     if (!title || !imageUrl) {
-      // return res.status(400).json({
-      //   success: false,
-      //   message: "Title and image URL are required.",
-      // });
+    
       errorResponse(res, 400, "Title and image URL are required.");
     }
 
@@ -46,11 +43,7 @@ const createBlog = async (req, res) => {
       error,
       "Error creating blog"
     );
-    // res.status(500).json({
-    //   success: false,
-    //   message: "Internal Server Error",
-    //   error: error.message,
-    // });
+    
   }
 };
 
@@ -65,11 +58,7 @@ const getAllBlog = async (req, res) => {
   } catch (error) {
     console.error("❌ Error:", error);
     return errorResponse(res, 500, "error in fetching blogs");
-    // res.status(500).json({
-    //   success: false,
-    //   message: "An error occurred.",
-    //   error: error.message,
-    // });
+   
   }
 };
 
@@ -78,9 +67,7 @@ const updateBlog = async (req, res) => {
     const { id, title, author, imageUrl, intro, description } = req.body;
 
     if (!id) {
-      // return res
-      //   .status(400)
-      //   .json({ success: false, message: "Blog ID is required to update." });
+      
       return errorResponse(res, 400, "Blog ID is required to update.");
     }
 
@@ -92,9 +79,7 @@ const updateBlog = async (req, res) => {
 
     if (!updatedBlog) {
       return errorResponse(res, 404, "Blog not found.");
-      // return res
-      //   .status(404)
-      //   .json({ success: false, message: "Blog not found." });
+     
     }
 
     res.status(200).json({
@@ -105,11 +90,7 @@ const updateBlog = async (req, res) => {
   } catch (error) {
     console.error("❌ Error:", error);
     return errorResponse(res, 500, "Internal error.", error, "on updated blog");
-    // res.status(500).json({
-    //   success: false,
-    //   message: "An error occurred.",
-    //   error: error.message,
-    // });
+    
   }
 };
 
@@ -119,18 +100,14 @@ const deleteBlog = async (req, res) => {
 
     if (!id) {
       return errorResponse(res, 500, "Blog ID is required to delete.");
-      // return res
-      //   .status(400)
-      //   .json({ success: false, message: "Blog ID is required to delete." });
+     
     }
 
     const blog = await Blog.findByIdAndDelete(id);
 
     if (!blog) {
       return errorResponse(res, 404, "Blog not found.");
-      // return res
-      //   .status(404)
-      //   .json({ success: false, message: "Blog not found." });
+     
     }
 
     res
@@ -139,11 +116,7 @@ const deleteBlog = async (req, res) => {
   } catch (error) {
     console.error("❌ Error:", error);
     return errorResponse(res, 500, "Internal error.", error, "on delete blog");
-    // res.status(500).json({
-    //   success: false,
-    //   message: "An error occurred.",
-    //   error: error.message,
-    // });
+    
   }
 };
 

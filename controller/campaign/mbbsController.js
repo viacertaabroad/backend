@@ -5,14 +5,12 @@ const newMBBS_InterestedUser = async (req, res) => {
   try {
     const { name, mobile, email, qualification, selectedCountry } = req.body;
 
-    // Validate required fields
     if (!name || !mobile || !email || !qualification || !selectedCountry) {
       return res
         .status(400)
         .json({ success: false, message: "All fields are required" });
     }
 
-    // Check if user already exists
     const existingUser = await MBBS_InterestedUser.findOne({ email });
     if (existingUser) {
       return res
@@ -20,7 +18,6 @@ const newMBBS_InterestedUser = async (req, res) => {
         .json({ success: false, message: "Email already exists" });
     }
 
-    // Save new user
     const newUser = new MBBS_InterestedUser({
       name,
       mobile,
@@ -30,8 +27,7 @@ const newMBBS_InterestedUser = async (req, res) => {
     });
     await newUser.save();
 
-    // Send email notification
-    // await sendEmail(process.env.EMAIL_SEND_TO, newUser, "mbbs_Users");
+    // await sendEmail(process.env.EMAIL_SEND_TO, newUser, "mbbs_Users"); // check later mbbs mail name in indexmail helper
     const currentDate = new Date().toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
     });

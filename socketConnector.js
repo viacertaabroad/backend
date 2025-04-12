@@ -1,8 +1,7 @@
 import { Server } from "socket.io";
-import faqData from "./faqData.js";
+import faqData from "./helpers/chatbot_data/faqData.js";
 import SupportRoom from "./models/supportRoom.js";
 
-import getAIResponse from "./utils/aiModel.js";
 import { sendNewRoomNotification } from "./utils/sseManager.js";
 
 const SUPPORT_HOURS = { start: 10, end: 18 };
@@ -242,85 +241,6 @@ const socketFn = (server) => {
       }
     });
 
-    // socket.on("request_support", async ({ roomId }) => {
-    //   try {
-    //     const existingRoom = await SupportRoom.findOne({ roomId });
-    //     if (existingRoom) {
-    //       socket.emit("bot_message", {
-    //         text: "You have already requested support. Please wait for an agent to join.",
-    //         sender: "bot",
-    //         roomId,
-    //       });
-    //       return;
-    //     }
-    //     socket.emit("support_room_status", { exists: true }); //check this later
-
-    //     const currentHour = new Date().getHours();
-    //     if (
-    //       currentHour >= SUPPORT_HOURS.start &&
-    //       currentHour < SUPPORT_HOURS.end
-    //     ) {
-    //       const newRoom = new SupportRoom({
-    //         roomId,
-    //         status: "waiting",
-    //         closingAt: new Date(Date.now() + 5 * 60 * 1000),
-    //       });
-
-    //       await newRoom.save();
-    //       sendNewRoomNotification(roomId);
-    //       activeSupportRooms.add(roomId);
-    //       await updateRoomActivity(roomId);
-
-    //       io.emit("new_support_room", newRoom);
-    //       io.to(roomId).emit("bot_message", {
-    //         text: "A support agent will join soon. Please do not refresh this page. Chatbot responses will be disabled.",
-    //         sender: "bot",
-    //         roomId,
-    //       });
-
-    //       //
-    //       io.emit("support_request", { roomId });
-
-    //       // Set initial timeout for no-agent-joining scenario
-    //       // const timer = setTimeout(async () => {
-    //       //   const room = await SupportRoom.findOne({ roomId });
-    //       //   if (room && room.status === "waiting") {
-    //       //     await handleRoomCleanup(roomId);
-    //       //   }
-    //       // }, 5 * 60 * 1000);
-
-    //       // activityTimers.set(roomId, timer);
-    //       //
-
-    //       //
-    //       // supportRoomEmitter.emit('new_support_room',newRoom)
-    //       //
-
-    //       setTimeout(async () => {
-    //         const room = await SupportRoom.findOne({ roomId });
-    //         if (room && room.status === "active") {
-    //           await SupportRoom.deleteOne({ roomId });
-    //           io.to(roomId).emit("support_room_closed", { roomId });
-    //           io.to(roomId).emit("bot_message", {
-    //             text: "No support agent joined within 5 minutes. Please try again later.",
-    //             sender: "bot",
-    //             roomId,
-    //           });
-    //           activeSupportRooms.delete(roomId);
-    //         }
-    //       }, 5 * 60 * 1000); // 5 minutes
-    //     } else {
-    //       io.to(roomId).emit("bot_message", {
-    //         text: "Live support is available from 10 AM to 6 PM. Please try again later.",
-    //         sender: "bot",
-    //         roomId,
-    //       });
-    //     }
-    //   } catch (error) {
-    //     console.error("Error handling support request:", error);
-    //   }
-    // });
-
     socket.on("request_support", async ({ roomId }) => {
       try {
         const existingRoom = await SupportRoom.findOne({ roomId });
@@ -383,36 +303,6 @@ const socketFn = (server) => {
         console.error("Error handling support request:", error);
       }
     });
-    //from user side
-    // socket.on("cancel_support_request", async ({ roomId }) => {
-    //   try {
-    //     const room = await SupportRoom.findOne({ roomId });
-    //     if (room) {
-    //       await SupportRoom.deleteOne({ roomId });
-    //       activeSupportRooms.delete(roomId);
-    //       await handleRoomCleanup(roomId);
-    //       // io.emit("support_room_closed", { roomId });
-    //       io.to(roomId).emit("support_room_closed");
-    //       // Send updated room list to admin clients
-    //       // io.emit(
-    //       //   "active_support_rooms",
-    //       //   await SupportRoom.find({ status: "active" })
-    //       // );
-    //       io.emit(
-    //         "active_support_rooms",
-    //         await SupportRoom.find({ status: { $in: ["active", "waiting"] } })
-    //       );
-    //       io.to(roomId).emit("bot_message", {
-    //         text: "Support request has been closed.",
-    //         sender: "bot",
-    //         roomId,
-    //       });
-    //       socket.emit("support_room_status", { exists: false });
-    //     }
-    //   } catch (error) {
-    //     console.error("Error closing support request:", error);
-    //   }
-    // });
 
     socket.on("cancel_support_request", async (data) => {
       try {
@@ -474,22 +364,6 @@ const socketFn = (server) => {
       }
     });
 
-    // socket.on("join_support_room", async ({ roomId }) => {
-    //   try {
-    //     const room = await SupportRoom.findOne({ roomId });
-    //     if (room) {
-    //       socket.join(roomId);
-    //       socket.emit("joined_support_room", { roomId });
-    //       io.to(roomId).emit("new_message", {
-    //         text: "Support team has joined the chat.",
-    //         sender: "bot",
-    //         timestamp: new Date().toLocaleTimeString(),
-    //       });
-    //     }
-    //   } catch (error) {
-    //     console.error("Error joining support room:", error);
-    //   }
-    // });
     socket.on("close_support_room", async ({ roomId }) => {
       try {
         await SupportRoom.deleteOne({ roomId });
@@ -515,54 +389,6 @@ const socketFn = (server) => {
       }
     });
 
-    // socket.on("close_support_room", async (data) => {
-    //   try {
-    //     // Validate input
-    //     if (!data || typeof data !== 'object') {
-    //       console.error('Invalid data received for close_support_room:', data);
-    //       return;
-    //     }
-
-    //     const { roomId } = data;
-
-    //     if (!roomId) {
-    //       console.error('Missing roomId in close_support_room');
-    //       return;
-    //     }
-
-    //     console.log(`Attempting to close room ${roomId}`); // Debug log
-
-    //     const room = await SupportRoom.findOne({ roomId });
-    //     if (!room) {
-    //       console.log(`Room ${roomId} not found - may already be closed`);
-    //       return;
-    //     }
-
-    //     await SupportRoom.deleteOne({ roomId });
-    //     await handleRoomCleanup(roomId);
-
-    //     // Notify all clients in the room
-    //     io.to(roomId).emit("support_room_closed", { roomId });
-
-    //     // Update all clients with current room list
-    //     io.emit(
-    //       "active_support_rooms",
-    //       await SupportRoom.find({ status: { $in: ["active", "waiting"] } })
-    //     );
-
-    //     // Send closing message to room
-    //     io.to(roomId).emit("new_message", {
-    //       text: "Support request has been closed by the support team.",
-    //       sender: "bot",
-    //       timestamp: new Date().toLocaleTimeString(),
-    //     });
-
-    //     console.log(`Successfully closed room ${roomId}`); // Debug log
-    //   } catch (error) {
-    //     console.error("Error closing support room:", error);
-    //   }
-    // });
-
     socket.on("support_message", async ({ roomId, message }) => {
       await updateRoomActivity(roomId);
       const supportMessage = {
@@ -573,25 +399,7 @@ const socketFn = (server) => {
       };
       io.to(roomId).emit("new_message", supportMessage);
     });
-    // ------
-    // socket.on("join_user_room", ({ roomId }) => {
-    //   console.log(`🔵 Support User ${socket.id} joined room: ${roomId}`);
 
-    //   // if (!activeSupportRooms.has(roomId)) {
-    //     activeSupportRooms.add(roomId);
-    //   // }
-
-    //   socket.join(roomId);
-    //   io.to(roomId).emit("bot_message", {
-    //     text: `A support agent has joined the chat Room id : ${roomId} . How can I assist you?`,
-    //     sender: "bot",
-    //     roomId,
-    //   });
-    //   io.emit("active_support_rooms", Array.from(activeSupportRooms));
-    //   // Log the room joining event
-    //   console.log(`✅ Support User ${socket.id} successfully joined room: ${roomId}`);
-    // });
-    // In your socket.io server code
     socket.on("join_user_room", async ({ roomId }) => {
       console.log(`🔵 Support User ${socket.id} joined room: ${roomId}`);
 

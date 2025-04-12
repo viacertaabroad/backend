@@ -10,6 +10,6 @@ const route = express.Router();
 
 route.get("/all", getBlogs); //working
 route.get("/:blogId", getBlogById); //working
-route.post("/create", createBlog);
+route.post("/create", createBlog); 
 route.put("/update/:id", updateBlog);
 export default route;

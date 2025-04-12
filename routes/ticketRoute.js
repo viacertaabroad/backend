@@ -13,9 +13,7 @@ import { isAuthenticatedUser, authorizedRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Public route (no login needed)
 // router.post("/create-guest", createTicket);
-
 router.post("/create", isAuthenticatedUser, createTicket);
 router.get("/myticket", isAuthenticatedUser, getmyTicket);
 router.put("/addMessage/:id", isAuthenticatedUser, addUserMessage);

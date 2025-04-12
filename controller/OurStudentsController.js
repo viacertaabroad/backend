@@ -22,10 +22,7 @@ const allStudents = async (req, res) => {
       // }))
     });
   } catch (error) {
-    // res.status(400).json({
-    //   success: false,
-    //   error: error.message || "An error occurred",
-    // });
+  
     return errorResponse(res, 400, "An error occurred");
   }
 };

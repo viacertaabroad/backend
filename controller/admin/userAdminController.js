@@ -56,8 +56,7 @@ const allUsers = async (req, res) => {
   } catch (error) {
     console.error("❌ Error fetching users:", error);
     return errorResponse(res, 500, "Error fetching users", error, "allUsers");
-    // res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
+    }
 };
 
 const updateUser = async (req, res) => {
@@ -66,10 +65,7 @@ const updateUser = async (req, res) => {
 
     if (!id) {
       return errorResponse(res, 400, "User ID is required");
-      // return res
-      //   .status(400)
-      //   .json({ success: false, message: "User ID is required." });
-    }
+     }
 
     const existingUser = await User.findOne({
       $or: [{ email }, { mobile }],
@@ -91,10 +87,7 @@ const updateUser = async (req, res) => {
 
     if (!updatedUser) {
       return errorResponse(res, 404, "User not found");
-      // return res
-      //   .status(404)
-      //   .json({ success: false, message: "User not found." });
-    }
+     }
 
     res.status(200).json({
       success: true,
@@ -104,12 +97,7 @@ const updateUser = async (req, res) => {
   } catch (error) {
     console.error("❌ Error updating user:", error);
     return errorResponse(res, 500, "Error updating user", error, "updateUser");
-    // res.status(500).json({
-    //   success: false,
-    //   message: "Internal Server Error",
-    //   error: error.message,
-    // });
-  }
+    }
 };
 
 const removeUser = async (req, res) => {
@@ -118,10 +106,7 @@ const removeUser = async (req, res) => {
 
     if (!id) {
       return errorResponse(res, 400, "User ID is required");
-      // return res
-      //   .status(400)
-      //   .json({ success: false, message: "User ID is required." });
-    }
+     }
 
     const deletedUser = await User.findByIdAndDelete(id);
 
@@ -139,11 +124,6 @@ const removeUser = async (req, res) => {
   } catch (error) {
     console.error("❌ Error deleting user:", error);
     return errorResponse(res, 500, "Error deleting user", error, "removeUser");
-    // res.status(500).json({
-    //   success: false,
-    //   message: "Internal Server Error",
-    //   error: error.message,
-    // });
   }
 };
 
