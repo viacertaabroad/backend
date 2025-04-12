@@ -16,6 +16,8 @@ export default function Home() {
           return toast(`${data.message}, ${data.adminMessage}`);
         case "TICKET_STATUS_UPDATE":
           return toast(`${data.message}`);
+        case "CONNECTED":
+          return console.log(data.message);
         case "ROOM_CREATED":
           return toast(
             <div>
@@ -34,7 +36,7 @@ export default function Home() {
             { closeOnClick: true }
           );
         default:
-          console.warn("⚠️ Unknown SSE type check spelling :", data.type);
+          console.warn("⚠️ Unknown SSE check dataType.");
       }
     },
     [navigate]
@@ -44,7 +46,9 @@ export default function Home() {
     // const eventSource = new EventSource(
     //   "http://localhost:8000/api/tickets/events"
     // );
-    const eventSource = new EventSource("http://localhost:8000/events");
+    const eventSource = new EventSource("http://localhost:8000/events", {
+      withCredentials: true,
+    });
 
     eventSource.onopen = () => {
       console.log("✅ SSE connection opened");

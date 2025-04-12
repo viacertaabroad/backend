@@ -3,7 +3,7 @@ import faqData from "./faqData.js";
 import SupportRoom from "./models/supportRoom.js";
 
 import getAIResponse from "./utils/aiModel.js";
-import { sendNewRoomNotification } from "./utils/sseNotification.js";
+import { sendNewRoomNotification } from "./utils/sseManager.js";
 
 const SUPPORT_HOURS = { start: 10, end: 18 };
 const userRooms = new Map();

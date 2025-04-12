@@ -1,3 +1,4 @@
+import errorResponse from "../helpers/errorHandler.js";
 import Ticket from "../models/ticket.js";
 import User from "../models/users.js";
 import { sendEmail } from "../utils/sendMail.js";
@@ -6,10 +7,8 @@ import {
   notifyMessageToUser,
   sendTicketNotification,
   sendTicketUpdateToUser,
-} from "../utils/sseNotification.js";
-// import { notifyNewMessage, sendTicketNotification } from "../utils/sseNotification.js";
+} from "../utils/sseManager.js";
 
- 
 export const createTicket = async (req, res) => {
   try {
     const { title, description, category } = req.body;
@@ -27,16 +26,13 @@ export const createTicket = async (req, res) => {
     } else {
       const { name, email, phone } = req.body;
       if (!email) {
-        return res.status(400).json({
-          error: "Email is required for guest tickets",
-          user: req.user,
-        });
+        return errorResponse(res, 400, "Email is required for guest tickets");
       }
       ticketData.guestUser = { name, email, phone };
     }
 
     const ticket = new Ticket(ticketData);
-    // await ticket.save();
+    await ticket.save();
 
     const data = {
       userName: req.user.name,
@@ -49,16 +45,19 @@ export const createTicket = async (req, res) => {
     // sendEmail("ashvarygidian1996@gmail.com", data, "newTicket");
     //  sendEmail("ashvarygidian1996@gmail.com", data, "newTicketUserSide");
 
-    // await sendTicketNotification(ticket);
+ 
     await sendTicketNotification(ticket);
 
     res.status(201).json(ticket);
- 
   } catch (error) {
-    res.status(400).json({
-      error: "Ticket creation failed",
-      details: error.message,
-    });
+    
+    return errorResponse(
+      res,
+      400,
+      "Ticket creation failed",
+      error,
+      "Ticket Controller : create Ticket"
+    );
   }
 };
 
@@ -71,7 +70,7 @@ export const getmyTicket = async (req, res) => {
       $or: [{ user: userId }, { "guestUser.email": req.user.email }],
     };
 
-    // If not including archived, filter them out
+     
     if (archived === "false" || archived === false) {
       query.status = { $ne: "archived" };
     }
@@ -87,11 +86,14 @@ export const getmyTicket = async (req, res) => {
       archived: archived === "true" || archived === true,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: "Failed to fetch tickets",
-      details: error.message,
-    });
+    
+    return errorResponse(
+      res,
+      500,
+      "Failed to fetch tickets",
+      error,
+      "Ticket Controller : getmyTicket"
+    );
   }
 };
 
@@ -101,31 +103,37 @@ export const addUserMessage = async (req, res) => {
     const { message } = req.body;
 
     if (!message || message.trim() === "") {
-      return res.status(400).json({ error: "Message content is required" });
+      
+      return errorResponse(res, 400, "Message content is required");
     }
 
     // Only allow logged-in users
     if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
+      // return res.status(401).json({ error: "Authentication required" });
+      return errorResponse(res, 401, "Authentication required");
     }
 
     const ticket = await Ticket.findById(id);
 
     if (!ticket) {
-      return res.status(404).json({ error: "Ticket not found" });
+      
+      return errorResponse(res, 404, "Ticket not found");
     }
 
-    // Authorization check - only ticket owner can add messages
+    //  only ticket owner can add messages
     if (!ticket.user || !ticket.user.equals(req.user._id)) {
-      return res.status(403).json({ error: "Unauthorized access to ticket" });
+      
+      return errorResponse(res, 403, "Unauthorized access to ticket");
     }
 
     // Prevent adding messages to closed tickets
     if (ticket.status === "closed" || ticket.status === "archived") {
-      return res.status(400).json({
-        error:
-          "This ticket is closed or archived. Please create a new ticket for further assistance.",
-      });
+      
+      return errorResponse(
+        res,
+        400,
+        "This ticket is closed or archived. Please create a new ticket for further assistance."
+      );
     }
 
     // Add the message
@@ -135,13 +143,13 @@ export const addUserMessage = async (req, res) => {
       createdAt: new Date(),
     });
 
-    // Change status from resolved to in-progress if needed
+     
     if (ticket.status === "resolved") {
       ticket.status = "in-progress";
     }
 
     ticket.updatedAt = new Date();
-    // await ticket.save();
+    await ticket.save();
 
     notifyMessageToAdmin(ticket, message);
 
@@ -166,10 +174,14 @@ export const addUserMessage = async (req, res) => {
     });
   } catch (error) {
     console.error("Error adding message:", error);
-    res.status(500).json({
-      error: "Failed to add message",
-      details: error.message,
-    });
+    
+    return errorResponse(
+      res,
+      500,
+      "Failed to add message",
+      error,
+      "ticket controller : add user message"
+    );
   }
 };
 
@@ -199,13 +211,14 @@ export const getTickets = async (req, res) => {
   });
 };
 
-//Admin message &
+//Admin message  
 export const addAdminMessage = async (req, res) => {
   const { id } = req.params;
   const { message } = req.body;
 
   const ticket = await Ticket.findById(id);
-  if (!ticket) return res.status(404).json({ error: "Ticket not found" });
+  if (!ticket) return errorResponse(res, 404, "Ticket not found");
+ 
 
   if (message) {
     ticket.messages.push({
@@ -219,18 +232,7 @@ export const addAdminMessage = async (req, res) => {
   ticket.updatedAt = new Date();
 
   await ticket.save();
-
-  // notifyNewMessage(ticket, message, true);
-  // notifyStatusChange (ticket, ticket.status);
-  //
-  // const userEmail = ticket.user
-  //   ? (await User.findById(ticket.user)).email
-  //   : ticket.guestUser.email;
-  // // Real-time notification to user if logged in
-  // if (ticket.user) {
-  //   notifyUserNewMessage(ticket.user.toString(), ticket, message);
-  // }
-  // Email notification to user
+ 
   const data = { ticketId: ticket._id, message, ticketStatus: ticket.status };
   // await sendEmail(userEmail, data, "supportNewMessagetoUser");
 
@@ -238,15 +240,16 @@ export const addAdminMessage = async (req, res) => {
 
   res.json(ticket);
 };
-// admin Update Ticket Status
+
+// Admin Update Ticket Status
 export const updateTicket = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
   const ticket = await Ticket.findById(id);
-  if (!ticket) return res.status(404).json({ error: "Ticket not found" });
+  if (!ticket) return errorResponse(res, 404, "Ticket not found");
 
-  // Status change logic
+ 
   if (status) {
     ticket.status = status;
     if (status === "closed") ticket.closedAt = new Date();
@@ -263,36 +266,37 @@ export const updateTicket = async (req, res) => {
   res.json(ticket);
 };
 
-// Archive my Ticket
+ 
 export const archiveMyTicket = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Only allow logged-in users
+ 
     if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
+      return errorResponse(res, 401, "Authentication required");
     }
 
     const ticket = await Ticket.findById(id);
 
     if (!ticket) {
-      return res.status(404).json({ error: "Ticket not found" });
+  
+      return errorResponse(res, 404, "Ticket not found");
     }
 
-    // Authorization check - only ticket owner can archive
+    //  only ticket owner can archive
     if (!ticket.user || !ticket.user.equals(req.user._id)) {
-      return res.status(403).json({ error: "Unauthorized access to ticket" });
+      return errorResponse(res, 403, "Unauthorized access to ticket");
     }
 
     // Only allow archiving of resolved or closed tickets
     if (ticket.status === "archived") {
-      return res.status(400).json({
-        error: "Ticket alread Archived.",
-      });
+      return errorResponse(res, 400, "Ticket alread Archived.");
     } else if (!["resolved", "closed"].includes(ticket.status)) {
-      return res.status(400).json({
-        error: "Only resolved or closed tickets can be archived",
-      });
+      return errorResponse(
+        res,
+        400,
+        "Only resolved or closed tickets can be archived"
+      );
     }
 
     ticket.status = "archived";
@@ -306,10 +310,14 @@ export const archiveMyTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error archiving ticket:", error);
-    res.status(500).json({
-      error: "Failed to archive ticket",
-      details: error.message,
-    });
+
+    return errorResponse(
+      res,
+      500,
+      "Failed to archive ticket",
+      error,
+      "ticket controlelr : archieve Ticket"
+    );
   }
 };
 
@@ -319,7 +327,7 @@ export const archiveTickets = async () => {
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
   await Ticket.updateMany(
-    { status: "Closed", closedAt: { $lte: oneMonthAgo } },
-    { status: "Archived" }
+    { status: "closed", closedAt: { $lte: oneMonthAgo } },
+    { status: "archived" }
   );
 };

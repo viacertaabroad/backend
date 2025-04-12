@@ -9,7 +9,7 @@ import {
   updateTicket,
 } from "../controller/TicketController.js";
 import { isAuthenticatedUser, authorizedRole } from "../middleware/auth.js";
-import { sendTicketNotification } from "../utils/sseNotification.js";
+ 
 
 const router = express.Router();
 

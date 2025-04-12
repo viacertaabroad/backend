@@ -14,11 +14,13 @@ import {
   enquiryRoutes,
   adminRoutes,
   googleAuthRoute,
+  ticketRoutes,
+  sseRoute,
 } from "./helpers/indexRouteImports.js";
-import ticketRoutes from "./routes/ticketRoute.js";
+
 import cookieParser from "cookie-parser";
 import { authorizedRole, isAuthenticatedUser } from "./middleware/auth.js";
-import { addClient } from "./utils/sseNotification.js";
+
 import cluster from "cluster";
 import os from "os";
 import process from "process";
@@ -80,10 +82,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
-app.use("/demo", (req, res) => {
+app.use("/demo", isAuthenticatedUser, (req, res) => {
   console.log("hello World");
-  res.send("Hello World");
+  const userId = req.user._id.toString();
+  const role = req.user.role || "user";
+  console.log("userid & role", userId, role);
+
+  res.json({ msg: "Hello World", userId, role });
 });
+ 
 app.get("/health", (req, res) => {
   console.log("health Status", { status: "ok", worker: process.pid });
   res.json({ status: "ok", worker: process.pid });
@@ -95,11 +102,11 @@ app.get("/workers", (req, res) => {
 
 // app.use("/api/whatsapp", whatsAppRoute);
 app.use("/api/whatsapp", whattappApiRoute);
-
-app.use("/events", (req, res) => addClient(res));
+app.use("/events", sseRoute);  
+app.use("/auth", googleAuthRoute);
 // /////////////////////////
 // All   API routes
-app.use("/auth", googleAuthRoute);
+
 app.use("/api/user", userRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/courses", coursesRoutes);
@@ -114,8 +121,9 @@ app.use(
 );
 app.use("/api/tickets", ticketRoutes);
 
-server.listen(port, () => {
+server.listen(port, (req, res) => {
   console.log(`🚀 Server is running on port: ${port}`);
+
   // console.log(`🚀 Worker ${process.pid} running on port: ${port}`);
 });
 
