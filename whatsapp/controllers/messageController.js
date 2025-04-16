@@ -6,6 +6,31 @@ import { Conversation } from "../models/conversation.model.js";
 // Save inbound message from webhook
 export const saveIncomingMessage = async (req, res) => {
   try {
+    const body = req.body;
+
+    // ✅ Message status update (read, delivered, etc.)
+    const statusData = body?.entry?.[0]?.changes?.[0]?.value?.statuses?.[0];
+    if (statusData) {
+      const { id: messageId, status, timestamp, recipient_id } = statusData;
+
+      const updated = await WhatsAppMessage.findOneAndUpdate(
+        { messageId },
+        { status, updatedAt: new Date(Number(timestamp) * 1000) },
+        { new: true }
+      );
+
+      if (updated) {
+        // ✅ Emit status update to the frontend in real-time
+        io.emit("messageStatusUpdate", {
+          messageId: updated.messageId,
+          status: updated.status,
+        });
+      }
+
+      return res.sendStatus(200);
+    }
+
+    // ///////////////
     const {
       messageId,
       from,
@@ -17,6 +42,7 @@ export const saveIncomingMessage = async (req, res) => {
       buttons,
       meta = {},
     } = req.body;
+
     //   1: Try to extract conversationId from meta
     let conversationId = meta.conversationId;
 
@@ -33,6 +59,7 @@ export const saveIncomingMessage = async (req, res) => {
         conversationId = newConversation._id;
       }
     }
+    //  Create and Save the Incoming Message
     const message = await WhatsAppMessage.create({
       messageId,
       phoneNumber: from,
@@ -43,10 +70,14 @@ export const saveIncomingMessage = async (req, res) => {
       mediaType,
       caption,
       buttons,
-
-      // Assume you set a valid conversation ID based on your application logic
       conversation: conversationId,
     });
+
+    await Conversation.findByIdAndUpdate(conversationId, {
+      lastInteraction: new Date(),
+      $push: { messages: message._id },
+    });
+
     req.whatsappIo?.emit("new-whatsapp-message", message);
 
     console.log("📥 Incoming:", {
@@ -104,11 +135,15 @@ export const sendAndSaveMessage = async (req, res) => {
       templateName,
       buttons,
       caption,
-      status: "Message Sent ✅", // update status to new format
+      status: "sent", // update status to new format
       isBroadcast: !!isBroadcast,
       tags,
       meta: result.meta,
       conversation: conversationId,
+    });
+    await Conversation.findByIdAndUpdate(conversationId, {
+      lastInteraction: new Date(),
+      $push: { messages: message._id },
     });
 
     console.log("📤 Outgoing:", {

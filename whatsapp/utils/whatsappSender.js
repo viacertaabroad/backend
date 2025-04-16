@@ -64,8 +64,8 @@ export const sendWhatsAppMessage = async ({
     });
 
     const resData = response.data;
-  
-    
+
+    console.log("message sended", resData);
 
     return {
       success: true,
@@ -73,7 +73,10 @@ export const sendWhatsAppMessage = async ({
       meta: resData,
     };
   } catch (err) {
-    console.error("❌ Error sending WhatsApp message:", err.response?.data || err.message);
+    console.error(
+      "❌ Error sending WhatsApp message:",
+      err.response?.data || err.message
+    );
     throw new Error("Failed to send WhatsApp message");
   }
 };

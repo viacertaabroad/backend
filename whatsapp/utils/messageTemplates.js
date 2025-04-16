@@ -1,35 +1,33 @@
-// whatsapp/utils/messageTemplates.js
 const messageTemplates = {
-  // Welcome template with interactive buttons
+  // 🌟 1. Welcome Message (Entry Point)
   welcome: {
     type: "interactive",
     interactive: {
       type: "button",
       body: {
-        text: `👋 Welcome to *ViaCerta Abroad* – Your Trusted Partner for Global Education & Career Success.
-Empowering Dreams, Enabling Futures. How can we help you today?`,
+        text: `👋 Welcome to *ViaCerta Abroad* – Your Trusted Partner for Global Education & Career Success.\n\nEmpowering Dreams, Enabling Futures.\n\nHow can we assist you today?`,
       },
       action: {
         buttons: [
           {
             type: "reply",
             reply: {
-              id: "services_overview",
-              title: "Our Services",
+              id: "get_started",
+              title: "🚀 Get Started",
             },
           },
           {
             type: "reply",
             reply: {
-              id: "counseling",
-              title: "Free Counseling",
+              id: "explore_services",
+              title: "📚 Explore Services",
             },
           },
           {
             type: "reply",
             reply: {
-              id: "contact",
-              title: "Contact Us",
+              id: "need_help",
+              title: "❓ Need Help",
             },
           },
         ],
@@ -37,46 +35,76 @@ Empowering Dreams, Enabling Futures. How can we help you today?`,
     },
   },
 
-  services_overview: {
+  // 🌐 2. List of Services (List Message)
+  explore_services: {
+    type: "interactive",
+    interactive: {
+      type: "list",
+      header: {
+        type: "text",
+        text: "📌 Our Comprehensive Services",
+      },
+      body: {
+        text: "Choose a category to explore more:",
+      },
+      footer: {
+        text: "Tap to expand each section for more info.",
+      },
+      action: {
+        button: "View Services",
+        sections: [
+          {
+            title: "🎯 Core Services",
+            rows: [
+              {
+                id: "academic_guidance",
+                title: "Academic & Career Guidance",
+                description: "Course selection, career mapping, skills",
+              },
+              {
+                id: "admission_support",
+                title: "Admissions & Documents",
+                description: "SOP, LOR, visa guidance, applications",
+              },
+              {
+                id: "post_admission",
+                title: "Post-Admission Help",
+                description: "Jobs, housing, relocation, pre-departure",
+              },
+              {
+                id: "career_support",
+                title: "Work Visa & Job Assistance",
+                description: "Interviews, job search, visa conversion",
+              },
+            ],
+          },
+        ],
+      },
+    },
+  },
+
+  // 💬 3. Get Started Flow
+  get_started: {
     type: "interactive",
     interactive: {
       type: "button",
       body: {
-        text: `🌐 *Our Comprehensive Services*\n
-1️⃣ Academic & Career Guidance\n
-2️⃣ Admissions & Documentation Support\n
-3️⃣ Post-Admission Assistance\n
-4️⃣ Career Support\n\n
-Please choose the service you are most interested in:`,
+        text: `🎯 Let's begin your journey!\n\nWhat are you planning to do?`,
       },
       action: {
         buttons: [
           {
             type: "reply",
             reply: {
-              id: "academic_guidance",
-              title: "Academic Guidance",
+              id: "free_counseling",
+              title: "🧑‍🎓 Book Counseling",
             },
           },
           {
             type: "reply",
             reply: {
-              id: "admissions",
-              title: "Admissions Help",
-            },
-          },
-          {
-            type: "reply",
-            reply: {
-              id: "post_admission",
-              title: "Post-Admission",
-            },
-          },
-          {
-            type: "reply",
-            reply: {
-              id: "career_support",
-              title: "Career Support",
+              id: "countries_list",
+              title: "🌍 Destination Countries",
             },
           },
         ],
@@ -84,34 +112,110 @@ Please choose the service you are most interested in:`,
     },
   },
 
+  // 🧭 Destination Countries
+  countries_list: {
+    type: "interactive",
+    interactive: {
+      type: "list",
+      header: {
+        type: "text",
+        text: "🌎 Top Study Destinations",
+      },
+      body: {
+        text: "Select a country to learn more:",
+      },
+      footer: {
+        text: "We support 10+ destinations worldwide.",
+      },
+      action: {
+        button: "Choose Country",
+        sections: [
+          {
+            title: "🌐 Countries",
+            rows: [
+              { id: "country_usa", title: "USA" },
+              { id: "country_canada", title: "Canada" },
+              { id: "country_uk", title: "United Kingdom" },
+              { id: "country_australia", title: "Australia" },
+              { id: "country_germany", title: "Germany" },
+              { id: "country_france", title: "France" },
+              { id: "country_singapore", title: "Singapore" },
+            ],
+          },
+        ],
+      },
+    },
+  },
+
+  // 🎓 Academic Guidance
   academic_guidance: {
     type: "text",
-    text: `🎓 *Personalized Academic & Career Guidance*\n
-Our consultancy ensures that your academic goals align with global career opportunities. Would you like to book a free counseling session?`,
+    text: `🎓 *Academic & Career Guidance*\n\nWe’ll help you align your academic path with a global career using:\n- Course and country selection\n- Career assessment\n- Skill mapping\n\n💬 Want to speak with a counselor? Reply *Free Counseling*.`,
   },
 
-  admissions: {
+  // 📄 Admission Support
+  admission_support: {
     type: "text",
-    text: `📄 *Admissions & Documentation Support*\n
-We offer detailed assistance with your university applications including SOP, LOR guidance, and visa support. Would you like to know more?`,
+    text: `📄 *Admissions & Documentation Help*\n\nOur team will guide you with:\n- SOP & LOR creation\n- Visa documentation\n- University application reviews\n\n✍️ Want us to review your profile? Reply *Profile Review*.`,
   },
 
+  // 🏠 Post-Admission
   post_admission: {
     type: "text",
-    text: `🏠 *Post-Admission Assistance*\n
-We provide support with accommodation, part-time/full-time job guidance, and interview preparation. Need more details on housing support?`,
+    text: `🏠 *Post-Admission Assistance*\n\nWe help you with:\n- Accommodation\n- Part-time & full-time jobs\n- Travel & banking setup\n\nReply *Job Support* or *Housing Help* to continue.`,
   },
 
+  // 💼 Career Support
   career_support: {
     type: "text",
-    text: `💼 *Career Transition & Work Visa Support*\n
-We help with job search strategies, resume building, and work visa conversion. Would you like some job search tips?`,
+    text: `💼 *Career & Work Visa Support*\n\nWe assist with:\n- Work visa conversion\n- Job interview training\n- Resume building\n\nType *Work Visa* or *Interview Prep* to explore more.`,
   },
 
-  // Default fallback message if input is not recognized
+  // 🆘 Help / FAQ
+  need_help: {
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: {
+        text: `🆘 Need help?\n\nWe’re here for you. What do you need help with?`,
+      },
+      action: {
+        buttons: [
+          {
+            type: "reply",
+            reply: {
+              id: "faq",
+              title: "❓ FAQs",
+            },
+          },
+          {
+            type: "reply",
+            reply: {
+              id: "talk_to_agent",
+              title: "🧑‍💼 Talk to Expert",
+            },
+          },
+        ],
+      },
+    },
+  },
+
+  // ℹ️ FAQs
+  faq: {
+    type: "text",
+    text: `📌 *Frequently Asked Questions*\n\n1. What services do you offer?\n2. Do you help with scholarships?\n3. What countries can I study in?\n4. Is English test mandatory?\n5. What are the costs involved?\n\nReply with the number (e.g., *1*) to know more.`,
+  },
+
+  // 💬 Human Support
+  talk_to_agent: {
+    type: "text",
+    text: `👨‍💼 Please wait while we connect you to a support expert.\n\nIn the meantime, type *menu* anytime to return to the main menu.`,
+  },
+
+  // ❌ Fallback
   error_fallback: {
     type: "text",
-    text: `❌ Sorry, we didn't understand that. Please try selecting one of the available options or type your query.`,
+    text: `❌ Sorry, I didn’t get that. Please choose from the menu or type *help*.`,
   },
 };
 

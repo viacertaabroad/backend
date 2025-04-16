@@ -1,4 +1,5 @@
 import { Server as SocketIOServer } from "socket.io";
+import { sendAndSaveMessage } from "../controllers/messageController";
 
 // Initialize the separate socket server for WhatsApp
 export const initializeWhatsappSocket = (server) => {
@@ -15,13 +16,16 @@ export const initializeWhatsappSocket = (server) => {
 
     socket.on("sendMessage", async (messageData, callback) => {
       try {
+        // Ensure messageData contains conversationId among other required fields
         const message = await sendAndSaveMessage(messageData);
-        io.to(message.conversation).emit("newMessage", message);
+        // Use the initialized socket server instance (whatsappIo) for broadcasting
+        whatsappIo.to(message.conversation.toString()).emit("newMessage", message);
         callback({ success: true });
       } catch (err) {
         callback({ success: false, error: err.message });
       }
     });
+    
 
     socket.on("disconnect", () => {
       console.log("WhatsApp socket disconnected");

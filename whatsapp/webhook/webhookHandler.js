@@ -57,16 +57,24 @@ export const handleWebhookEvent = async (req, res) => {
           break;
         case "button":
           baseData.buttons = [message.button.text];
+          baseData.text = message.button.text;
+          baseData.buttonId = message.button.payload; // This is the `id` from your button
           break;
       }
 
       req.body = baseData;
+      console.log("Incoming MEssage , baseData : ", baseData);
+
       await saveIncomingMessage(req, res);
 
       // Trigger auto-response logic
       const response = await handleAutoResponse(req.body);
       if (response) {
-        await sendAndSaveMessage({ ...response, phoneNumber: message.from, conversationId: baseData.meta.conversationId });
+        await sendAndSaveMessage({
+          ...response,
+          phoneNumber: message.from,
+          conversationId: baseData.meta.conversationId,
+        });
       }
     }
 
@@ -76,10 +84,10 @@ export const handleWebhookEvent = async (req, res) => {
       // statusData.status can be: "sent", "delivered", "read", "failed"
       // Map them to your emoji values:
       const statusMap = {
-        sent: "Message Sent ✅",
-        delivered: "Delivered 📬",
-        read: "Read ✅✅",
-        failed: "Failed ❌"
+        sent: "sent",
+        delivered: "delivered",
+        read: "read",
+        failed: "failed",
       };
       req.body = {
         messageId: statusData.id,
