@@ -1,6 +1,5 @@
 // Store connected clients: Map<clientId, { id, role, res }>
 const clients = new Map();
-
 /**
  * Add a new SSE client connection
  * @param {Object} res - Express Response object

@@ -44,7 +44,7 @@ export async function sendEmail(to, data, emailType) {
     const templateFn = templates[emailType];
     if (!templateFn)
       throw new Error(`No email template found for type: ${emailType}`);
-    const { subject, html } = templateFn(data);
+    const { subject, html, bcc } = templateFn(data);
 
     // --
     const mailOptions = {
@@ -52,6 +52,7 @@ export async function sendEmail(to, data, emailType) {
       to: to,
       subject,
       html,
+      ...(bcc && { bcc }),
     };
 
     await transporter.sendMail(mailOptions);

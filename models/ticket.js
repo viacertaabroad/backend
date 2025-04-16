@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const ticketSchema = new mongoose.Schema({
-  // Basic Info
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -42,7 +41,6 @@ const ticketSchema = new mongoose.Schema({
     enum: ["low", "medium", "high", "urgent"],
   },
 
-  // Metadata
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

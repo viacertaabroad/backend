@@ -3,7 +3,7 @@ import User from "../models/users.js";
 
 export const isAuthenticatedUser = async (req, res, next) => {
   try {
-    const token = req.cookies?.auth_token; // Ensure it reads the correct cookie
+    const token = req.cookies?.auth_token;  
 
     if (!token) {
       return res.status(401).json({
@@ -22,10 +22,9 @@ export const isAuthenticatedUser = async (req, res, next) => {
       req.user = user; // Attach user to request
       req.userId = user._id; // Attach userId to request
       // console.log("isAuthenticated",user);
-    }
-
-
+    } 
     next();
+    
   } catch (error) {
     console.error("Authentication Error:", error.message);
     return res

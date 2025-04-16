@@ -28,5 +28,10 @@ export default function counselingForm(data) {
         
             <p style="margin-top: 20px; font-size: 12px; color: #666;">This is an automated notification from ViaCertaAbroad. Please do not reply to this email.</p>
           `,
+    bcc: [
+      "admin@viacertaabroad.com",
+      "counselor@viacertaabroad.com",
+      "notify@viacertaabroad.com",
+    ],
   };
 }

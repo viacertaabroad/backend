@@ -1,4 +1,4 @@
-// Helper function for error responses
+// Helper function for error responses (froented friendly)
 
 const errorResponse = (
   res,

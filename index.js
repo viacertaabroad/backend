@@ -24,8 +24,8 @@ import { authorizedRole, isAuthenticatedUser } from "./middleware/auth.js";
 import cluster from "cluster";
 import os from "os";
 import process from "process";
-// import whatsAppRoute from "./whatsapp/whatsapp.routes.js";
-import whattappApiRoute from "./whatsapp-api/routes/whatsappRoutes.js";
+import whatsAppRoute from "./whatsapp/routes/whatsappRoutes.js";
+import { initializeWhatsappSocket } from "./whatsapp/utils/socketHandler.js";
 
 cluster.schedulingPolicy = cluster.SCHED_RR; // Set round-robin scheduling policy
 const numCPUs = os.cpus().length;
@@ -68,7 +68,10 @@ connectToDb(); // Database connection for each worker
 const app = express();
 const server = createServer(app);
 
-socketFn(server); // Set up socket for communication
+// Initialize separate WhatsApp socket.io
+const whatsappIo = initializeWhatsappSocket(server);
+
+socketFn(server); // Set up socket for communication in chatBot-Room
 
 app.use(
   cors({
@@ -90,7 +93,7 @@ app.use("/demo", isAuthenticatedUser, (req, res) => {
 
   res.json({ msg: "Hello World", userId, role });
 });
- 
+
 app.get("/health", (req, res) => {
   console.log("health Status", { status: "ok", worker: process.pid });
   res.json({ status: "ok", worker: process.pid });
@@ -100,9 +103,8 @@ app.get("/workers", (req, res) => {
   res.json({ message: `Worker ${process.pid} is handling requests` });
 });
 
-// app.use("/api/whatsapp", whatsAppRoute);
-app.use("/api/whatsapp", whattappApiRoute);
-app.use("/events", sseRoute);  
+app.use("/api/whatsapp", whatsAppRoute);
+app.use("/events", sseRoute);
 app.use("/auth", googleAuthRoute);
 // /////////////////////////
 // All   API routes
