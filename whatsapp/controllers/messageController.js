@@ -28,7 +28,7 @@ export const saveIncomingMessage = async (req, res) => {
       } else {
         const newConversation = await Conversation.create({
           phoneNumber: from,
-          lastInteraction: new Date()
+          lastInteraction: new Date(),
         });
         conversationId = newConversation._id;
       }
@@ -48,6 +48,15 @@ export const saveIncomingMessage = async (req, res) => {
       conversation: conversationId,
     });
     req.whatsappIo?.emit("new-whatsapp-message", message);
+
+    console.log("📥 Incoming:", {
+      from: message.phoneNumber,
+      type: message.type,
+      text: message.text,
+      conversation: message.conversation,
+      timestamp: message.createdAt,
+    });
+
     return res.status(200).json({ success: true, message });
   } catch (err) {
     console.error("❌ Error saving inbound message:", err);
@@ -100,6 +109,14 @@ export const sendAndSaveMessage = async (req, res) => {
       tags,
       meta: result.meta,
       conversation: conversationId,
+    });
+
+    console.log("📤 Outgoing:", {
+      to: message.phoneNumber,
+      type: message.type,
+      text: message.text || message.caption || "[non-text]",
+      conversation: message.conversation,
+      timestamp: message.createdAt,
     });
 
     req.whatsappIo?.emit("new-whatsapp-message", message);
