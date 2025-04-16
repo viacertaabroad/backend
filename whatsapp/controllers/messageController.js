@@ -6,7 +6,33 @@ import { Conversation } from "../models/conversation.model.js";
 // Save inbound message from webhook
 export const saveIncomingMessage = async (req, res) => {
   try {
-    const { messageId, from, type, text, mediaUrl, mediaType, caption, buttons, meta } = req.body;
+    const {
+      messageId,
+      from,
+      type,
+      text,
+      mediaUrl,
+      mediaType,
+      caption,
+      buttons,
+      meta = {},
+    } = req.body;
+    //   1: Try to extract conversationId from meta
+    let conversationId = meta.conversationId;
+
+    //  2: If not present, auto-create or find conversation
+    if (!conversationId) {
+      const existing = await Conversation.findOne({ phoneNumber: from });
+      if (existing) {
+        conversationId = existing._id;
+      } else {
+        const newConversation = await Conversation.create({
+          phoneNumber: from,
+          lastInteraction: new Date()
+        });
+        conversationId = newConversation._id;
+      }
+    }
     const message = await WhatsAppMessage.create({
       messageId,
       phoneNumber: from,
@@ -17,9 +43,9 @@ export const saveIncomingMessage = async (req, res) => {
       mediaType,
       caption,
       buttons,
-      meta,
+
       // Assume you set a valid conversation ID based on your application logic
-      conversation: meta.conversationId 
+      conversation: conversationId,
     });
     req.whatsappIo?.emit("new-whatsapp-message", message);
     return res.status(200).json({ success: true, message });
@@ -33,13 +59,28 @@ export const saveIncomingMessage = async (req, res) => {
 export const sendAndSaveMessage = async (req, res) => {
   try {
     const {
-      phoneNumber, type, text, mediaUrl, mediaType, templateName, buttons, caption, tags, conversationId,
-      isBroadcast
+      phoneNumber,
+      type,
+      text,
+      mediaUrl,
+      mediaType,
+      templateName,
+      buttons,
+      caption,
+      tags,
+      conversationId,
+      isBroadcast,
     } = req.body;
 
     // 1. Send using WhatsApp Business API
     const result = await sendWhatsAppMessage({
-      phoneNumber, type, text, mediaUrl, mediaType, templateName, buttons
+      phoneNumber,
+      type,
+      text,
+      mediaUrl,
+      mediaType,
+      templateName,
+      buttons,
     });
 
     // 2. Save in DB
@@ -58,7 +99,7 @@ export const sendAndSaveMessage = async (req, res) => {
       isBroadcast: !!isBroadcast,
       tags,
       meta: result.meta,
-      conversation: conversationId
+      conversation: conversationId,
     });
 
     req.whatsappIo?.emit("new-whatsapp-message", message);
@@ -78,21 +119,22 @@ export const updateMessageStatus = async (req, res) => {
       { messageId },
       {
         $set: { status },
-        $push: { statusHistory: { status, timestamp: new Date() } }
+        $push: { statusHistory: { status, timestamp: new Date() } },
       },
       { new: true }
     );
 
     if (updated) {
       // Update last interaction time for the conversation
-      await Conversation.findByIdAndUpdate(
-        updated.conversation,
-        { lastInteraction: new Date() }
-      );
+      await Conversation.findByIdAndUpdate(updated.conversation, {
+        lastInteraction: new Date(),
+      });
       req.whatsappIo?.emit("whatsapp-message-status", updated);
       return res.status(200).json({ success: true, updated });
     } else {
-      return res.status(404).json({ success: false, message: "Message not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Message not found" });
     }
   } catch (err) {
     console.error("❌ Error updating status:", err);

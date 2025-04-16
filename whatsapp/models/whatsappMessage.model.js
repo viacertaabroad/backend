@@ -55,8 +55,8 @@ const messageSchema = new mongoose.Schema(
 
     conversation: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Conversation",
-      required: true,
+      ref: "whatsapp_conversations",
+      required: false, // make it true in production
     },
     statusHistory: [
       {
@@ -66,7 +66,7 @@ const messageSchema = new mongoose.Schema(
     ],
     responseTo: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "WhatsAppMessage",
+      ref: "whatsapp_messages",
     },
     isAutoReply: { type: Boolean, default: false },
   },
@@ -76,5 +76,5 @@ const messageSchema = new mongoose.Schema(
   }
 );
 
-const WhatsAppMessage = mongoose.model("WhatsAppMessage", messageSchema);
+const WhatsAppMessage = mongoose.model("whatsapp_messages", messageSchema);
 export default WhatsAppMessage;

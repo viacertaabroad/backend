@@ -12,7 +12,7 @@ const conversationSchema = new mongoose.Schema({
   lastInteraction: { type: Date, default: Date.now },
   tags: [String],
   meta: Object,
-  messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "WhatsAppMessage" }]
+  messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "whatsapp_messages" }]
 }, { timestamps: true });
 
-export const Conversation = mongoose.model("Conversation", conversationSchema);
+export const Conversation = mongoose.model("whatsapp_conversations", conversationSchema);
