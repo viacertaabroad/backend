@@ -1,5 +1,5 @@
 import { Server as SocketIOServer } from "socket.io";
-import { sendAndSaveMessage } from "../controllers/messageController";
+import { sendAndSaveMessage } from "../controllers/messageController.js";
 
 // Initialize the separate socket server for WhatsApp
 export const initializeWhatsappSocket = (server) => {

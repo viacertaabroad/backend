@@ -5,6 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,8 +21,10 @@
   "homepage": "https://github.com/viacertaabroad/backend#readme",
   "dependencies": {
     "@xenova/transformers": "^2.17.2",
+    "agenda": "^5.0.0",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
+    "bull": "^4.16.5",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -30,11 +34,14 @@
     "fs": "^0.0.1-security",
     "googleapis": "^146.0.0",
     "htop": "^1.0.1",
+    "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.12.2",
     "node-cache": "^5.1.2",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.10.0",
     "openai": "^4.90.0",
+    "p-limit": "^6.2.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "socket.io": "^4.8.1",

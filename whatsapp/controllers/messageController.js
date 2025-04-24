@@ -30,7 +30,7 @@ export const saveIncomingMessage = async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // ///////////////
+    /////////////////   new incoming message
     const {
       messageId,
       from,
@@ -43,22 +43,38 @@ export const saveIncomingMessage = async (req, res) => {
       meta = {},
     } = req.body;
 
-    //   1: Try to extract conversationId from meta
-    let conversationId = meta.conversationId;
-
-    //  2: If not present, auto-create or find conversation
-    if (!conversationId) {
-      const existing = await Conversation.findOne({ phoneNumber: from });
-      if (existing) {
-        conversationId = existing._id;
-      } else {
-        const newConversation = await Conversation.create({
-          phoneNumber: from,
-          lastInteraction: new Date(),
-        });
-        conversationId = newConversation._id;
-      }
+    if (await WhatsAppMessage.exists({ messageId })) {
+      return res
+        .status(200)
+        .json({ success: true, note: "Already processed." });
     }
+    //    Try to extract conversationId from meta
+    // let conversationId = meta.conversationId;
+
+    // //  2: If not present, auto-create or find conversation
+    // if (!conversationId) {
+    //   const existing = await Conversation.findOne({ phoneNumber: from });
+    //   if (existing) {
+    //     conversationId = existing._id;
+    //   } else {
+    //     const newConversation = await Conversation.create({
+    //       phoneNumber: from,
+    //       lastInteraction: new Date(),
+    //     });
+    //     conversationId = newConversation._id;
+    //   }
+    // }
+
+    // upsert conversation in one go
+    const convo = await Conversation.findOneAndUpdate(
+      { phoneNumber: from },
+      {
+        $set: { lastInteraction: new Date() },
+        $setOnInsert: { phoneNumber: from },
+      },
+      { new: true, upsert: true }
+    );
+
     //  Create and Save the Incoming Message
     const message = await WhatsAppMessage.create({
       messageId,
@@ -73,10 +89,16 @@ export const saveIncomingMessage = async (req, res) => {
       conversation: conversationId,
     });
 
-    await Conversation.findByIdAndUpdate(conversationId, {
-      lastInteraction: new Date(),
-      $push: { messages: message._id },
-    });
+    // await Conversation.findByIdAndUpdate(conversationId, {
+    //   lastInteraction: new Date(),
+    //   $push: { messages: message._id },
+    // });
+
+    // push to messages array
+    await Conversation.updateOne(
+      { _id: convo._id },
+      { $push: { messages: msg._id } }
+    );
 
     req.whatsappIo?.emit("new-whatsapp-message", message);
 
