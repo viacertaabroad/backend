@@ -1,65 +1,41 @@
 import React, { useEffect, useState, useRef, useCallback, memo } from "react";
 import { io } from "socket.io-client";
 
+// Card to display each active room
 const SupportRoomCard = memo(
-  ({ room, handleJoinRoom, selectedRoom, socketRef }) => {
-    const [timeLeft, setTimeLeft] = useState("");
-
-    useEffect(() => {
-      const updateTimer = () => {
-        if (!room.closingAt) return;
-        const total = Math.max(0, new Date(room.closingAt) - Date.now());
-        const minutes = Math.floor(total / 60000);
-        const seconds = Math.floor((total % 60000) / 1000);
-        setTimeLeft(`${minutes}m ${seconds.toString().padStart(2, "0")}s`);
-      };
-
-      const timer = setInterval(updateTimer, 1000);
-      updateTimer();
-      return () => clearInterval(timer);
-    }, [room.closingAt]);
+  ({ roomId, handleJoinRoom, selectedRoom, socketRef }) => {
+    const isActive = selectedRoom === roomId;
 
     return (
       <div className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-        <div className="flex justify-between items-start">
-          <div className="w-full">
-            <div className="flex items-center mb-2 justify-between">
-              <h2 className="text-lg font-semibold">Room: {room.roomId}</h2>
-              {selectedRoom === room.roomId && (
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
-                  Active
-                </span>
-              )}
-            </div>
-            <div className="text-sm text-gray-600 mb-2">
-              {room.status === "waiting" ? "Waiting for agent" : "Active"} -
-              Closes in: {timeLeft}
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleJoinRoom(room.roomId)}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
-              >
-                Join Room
-              </button>
-              <button
-                onClick={() => {
-                  const isConfirmed = window.confirm(
-                    "Are you sure you want to close this room?"
-                  );
-                  if (isConfirmed && socketRef.current) {
-                    socketRef.current.emit("close_support_room", {
-                      roomId: room.roomId,
-                    });
-                  }
-                }}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
-              >
-                Close Room
-              </button>
-            </div>
-          </div>
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Room: {roomId}</h3>
+          {isActive && (
+            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
+              Active
+            </span>
+          )}
         </div>
+
+        <div className="mt-2 flex space-x-2">
+          <button
+            onClick={() => handleJoinRoom(roomId)}
+            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+          >
+            Join
+          </button>
+          <button
+            onClick={() => {
+              if (socketRef.current && window.confirm("Close this room?")) {
+                socketRef.current.emit("close_support_room", { roomId });
+              }
+            }}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+          >
+            Close
+          </button>
+        </div>
+        <div></div>
       </div>
     );
   }
@@ -70,126 +46,120 @@ const Support = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [isClosing, setIsClosing] = useState(false);
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
-  const [connectedUsers, setConnectedUsers] = useState(1);
+
+  // Handle cleaning up a room when agent or user closes it
   const handleRoomClosed = useCallback(
     ({ roomId }) => {
-      setActiveRooms((prev) => prev.filter((room) => room.roomId !== roomId));
+      setActiveRooms((prev) => prev.filter((id) => id !== roomId));
       if (selectedRoom === roomId) {
-        setIsClosing(true);
-        setTimeout(() => {
-          setSelectedRoom(null);
-          setMessages([]);
-          setIsClosing(false);
-        }, 3000);
+        setSelectedRoom(null);
+        setMessages([]);
       }
     },
     [selectedRoom]
   );
 
+  // Initialize socket and room list
   useEffect(() => {
-    socketRef.current = io("http://localhost:8000");
-
-    const socket = socketRef.current;
+    const socket = io("http://localhost:8000");
+    socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("✅ Connected:", socketRef.current.id);
       socket.emit("get_active_support_rooms");
     });
 
-    socket.on("active_support_rooms", setActiveRooms);
-    // socket.on("active_support_rooms", (room) => {
-      // setActiveRooms((prev) => [...prev, room]);
-    // });
-    
-    socket.on("new_support_room", (room) => {
-      setActiveRooms((prev) => [...prev, room]);
+    socket.on("active_support_rooms", (rooms) => {
+      setActiveRooms(Array.isArray(rooms) ? rooms : []);
     });
 
-    //
-    socket.on("user_count_update", ({ count }) => {
-      setConnectedUsers(count);
+    socket.on("new_support_room", (roomId) => {
+      setActiveRooms((prev) =>
+        prev.includes(roomId) ? prev : [...prev, roomId]
+      );
     });
-
-    //
 
     return () => {
-      socket.off("user_count_update");
+      socket.off("active_support_rooms");
+      socket.off("new_support_room");
+
       socket.disconnect();
     };
   }, []);
 
+  // Listen for messages and room closure in selected room // Per-room listeners
   useEffect(() => {
     if (!socketRef.current || !selectedRoom) return;
-
     const socket = socketRef.current;
-    const messageHandler = (message) => {
-      if (message.roomId === selectedRoom) {
-        setMessages((prev) => [...prev, message]);
+
+    // Incoming chat messages
+    const onMessage = (msg) => {
+      if (msg.roomId === selectedRoom) {
+        setMessages((prev) => [...prev, msg]);
       }
     };
-
-    const botHandler = (message) => {
-      if (message.roomId === selectedRoom) {
+    const onBot = (msg) => {
+      if (msg.roomId === selectedRoom) {
         setMessages((prev) => [
           ...prev,
-          {
-            text: message.text,
-            sender: "bot",
-            timestamp: new Date().toLocaleTimeString(),
-            roomId: message.roomId,
-          },
+          { ...msg, sender: "bot", timestamp: new Date().toLocaleTimeString() },
         ]);
       }
     };
+    // const onCloseTime = ({ roomId, closeTime }) => {
+    //   setCloseTimes((prev) => ({ ...prev, [roomId]: closeTime }));
+    // }
 
+    socket.on("new_message", onMessage);
+    socket.on("bot_message", onBot);
+    // socket.on("room_close_time", onCloseTime);
     socket.on("support_room_closed", handleRoomClosed);
-    socket.on("new_message", messageHandler);
-    socket.on("bot_message", botHandler);
 
     return () => {
-      socket.off("new_message", messageHandler);
-      socket.off("bot_message", botHandler);
+      socket.off("new_message", onMessage);
+      socket.off("bot_message", onBot);
+      // socket.off("room_close_time", onCloseTime);
       socket.off("support_room_closed", handleRoomClosed);
     };
   }, [selectedRoom, handleRoomClosed]);
 
+  // Auto-scroll chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Join a room as agent
   const handleJoinRoom = (roomId) => {
     if (socketRef.current) {
       socketRef.current.emit("join_user_room", { roomId });
       setSelectedRoom(roomId);
       setMessages([]);
-      setIsClosing(false);
     }
   };
 
-  const handleSendMessage = () => {
-    if (input.trim() && selectedRoom && socketRef.current) {
-      socketRef.current.emit("support_message", {
-        roomId: selectedRoom,
-        message: input.trim(),
-      });
-      setInput("");
-    }
+  // Send support message
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text || !selectedRoom) return;
+    socketRef.current.emit("support_message", {
+      roomId: selectedRoom,
+      message: text,
+    });
+    setInput("");
   };
 
   return (
-    <div className="p-4 bg-gray-100 min-h-screen">
+    <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-2xl font-bold mb-4">
         Active Support Rooms ({activeRooms.length})
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {activeRooms.map((room) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {activeRooms.map((id) => (
           <SupportRoomCard
-            key={room}
-            room={room}
+            key={id}
+            roomId={id}
             handleJoinRoom={handleJoinRoom}
             selectedRoom={selectedRoom}
             socketRef={socketRef}
@@ -198,85 +168,64 @@ const Support = () => {
       </div>
 
       {selectedRoom && (
-        <div
-          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity    duration-1000 ${
-            isClosing ? "opacity-0" : "opacity-100"
-          }`}
-        >
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold m-auto">
-                Chat Room <p className="text-sm">#{selectedRoom}</p>
-              </h2>
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Room: {selectedRoom}</h2>
 
-              {/* <h3>
-                <div className="text-sm bg-blue-800 px-2 py-1 rounded">
-                  👥 {connectedUsers} connected
-                </div>
-              </h3> */}
-              <button
-                onClick={() => {
-                  setIsClosing(true);
-                  setTimeout(() => setSelectedRoom(null), 3000);
-                }}
-                className="text-gray-500 hover:text-gray-700"
+            <button
+              onClick={() => setSelectedRoom(null)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="h-64 overflow-y-auto mb-4 p-2 bg-gray-50 rounded">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex mb-2 ${
+                  msg.sender === "support" ? "justify-end" : "justify-start"
+                }`}
               >
-                ✕
-              </button>
-            </div>
-
-            <div className="h-64 overflow-y-auto mb-4 border rounded-lg p-3 bg-gray-50">
-              {messages.map((msg, index) => (
+                <div className="mr-2 text-xl">
+                  {msg.sender === "bot" && "🤖"}
+                  {msg.sender === "user" && "🧑"}
+                  {msg.sender === "support" && "👩‍💻"}
+                </div>
                 <div
-                  key={`${msg.timestamp}-${index}`}
-                  className={`flex ${
-                    msg.sender === "support" ? "justify-end" : "justify-start"
-                  } mb-3`}
+                  className={`px-3 py-2 rounded-lg shadow-md max-w-xs ${
+                    {
+                      support: "bg-purple-500 text-white",
+                      bot: "bg-gray-200 text-black",
+                      user: "bg-blue-500 text-white",
+                    }[msg.sender]
+                  }`}
                 >
-                  <div
-                    className={`flex items-start max-w-xs ${
-                      msg.sender === "support" ? "flex-row-reverse" : ""
-                    }`}
-                  >
-                    <div className="mr-2 text-xl">
-                      {msg.sender === "bot" && "🤖"}
-                      {msg.sender === "user" && "🧑"}
-                      {msg.sender === "support" && "👩‍💻"}
-                    </div>
-                    <div
-                      className={`px-3 py-2 rounded-lg shadow ${
-                        msg.sender === "support"
-                          ? "bg-purple-500 text-white"
-                          : msg.sender === "bot"
-                          ? "bg-gray-300 text-black  "
-                          : "bg-blue-500 text-white"
-                      }`}
-                    >
-                      <p className="text-sm">{msg.text}</p>
-                      <p className="text-xs mt-1 opacity-70">{msg.timestamp}</p>
-                    </div>
-                  </div>
+                  <p className="text-sm">{msg.text}</p>
+                  <p className="text-xs mt-1 opacity-70 text-right">
+                    {msg.timestamp}
+                  </p>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
 
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                placeholder="Type your message..."
-                className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={handleSendMessage}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Send
-              </button>
-            </div>
+          <div className="flex space-x-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Type a message..."
+              className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleSend}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              Send
+            </button>
           </div>
         </div>
       )}
