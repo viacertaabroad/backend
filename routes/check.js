@@ -3,6 +3,7 @@ import {isAuthenticatedUser } from "../middleware/auth.js";
 import {checkRedisHealth } from "../config/redisConfig.js";
 import {getCache, removeCache, setCache} from "../utils/redisCache.js";
 import axios from "axios";
+import User from "../models/users.js";
  
  
  
@@ -112,6 +113,29 @@ route.get("/testLoadBalancing", (req, res) => {
     // workerInfo
   });
 });
+
+
+route.post("/test-mongo-injection", async (req, res) => {
+  try {
+    const { userName, password } = req.body;
+
+    // Vulnerable query without sanitization or validation
+    const user = await User.findOne({
+      name: userName,
+      password: password
+    });
+
+    if (user) {
+      return res.status(200).json({ message: "User found!" ,user});
+    } else {
+      return res.status(404).json({ message: "User not found!" });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 export default route;
 
 

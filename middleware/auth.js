@@ -3,7 +3,7 @@ import User from "../models/users.js";
 
 export const isAuthenticatedUser = async (req, res, next) => {
   try {
-    const token = req.cookies?.auth_token;  
+    const token = req.cookies?.auth_token;
 
     if (!token) {
       return res.status(401).json({
@@ -19,12 +19,26 @@ export const isAuthenticatedUser = async (req, res, next) => {
       if (!user) {
         return res.status(404).json({ success: false, msg: "User not found" });
       }
+
+      // Find the session
+      const session = user.sessions.find(
+        (s) => s.sessionId === jwtUser.sessionId
+      );
+      if (!session)
+        return res
+          .status(401)
+          .json({ success: false, msg: "Session invalid or expired" });
+
+      // Update lastUsed timestamp
+      session.lastUsed = Date.now();
+      await user.save();
+
       req.user = user; // Attach user to request
       req.userId = user._id; // Attach userId to request
       // console.log("isAuthenticated",user);
-    } 
+      req.sessionId = jwtUser.sessionId;
+    }
     next();
-    
   } catch (error) {
     console.error("Authentication Error:", error.message);
     return res
@@ -38,7 +52,7 @@ export const authorizedRole = (roles) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: "User is not allowed to access this route.",
+        message: "Not allowed to access this route.",
       });
     }
     next();

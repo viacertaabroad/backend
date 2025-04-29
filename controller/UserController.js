@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import { sendEmail } from "../utils/sendMail.js";
 import { generateToken } from "../utils/genToken.js";
 import errorResponse from "../helpers/errorHandler.js";
+import getIp from "../utils/getIp.js";
+import manageSession from "../utils/manageSession.js";
 
 const signUp = async (req, res) => {
   try {
@@ -174,7 +176,7 @@ const login = async (req, res) => {
 
     const user = await User.findOne({
       $or: [{ email }, { mobile }],
-    }).select("+password +isVerified +otp +otpExpiry");
+    }).select("+password +isVerified +otp +otpExpiry +sessions  +knownIPs");
 
     if (!user) {
       return errorResponse(res, 404, "User not found.");
@@ -208,7 +210,7 @@ const login = async (req, res) => {
         return errorResponse(res, 401, "Invalid credentials.");
       }
       user.lastLogin.by = "password";
-      await user.save();
+      // await user.save();
     } else if (isPhoneNumber) {
       const otp = crypto.randomInt(100000, 999999).toString(); // Generate 6-digit OTP
       const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 min validity
@@ -220,6 +222,7 @@ const login = async (req, res) => {
       // await user.save();
       // Update only OTP fields
       await User.updateOne({ _id: user._id }, { otp: hashedOtp, otpExpiry });
+      // remove this savee above later
 
       // await sendSmsOtp(mobile, otp);
 
@@ -229,7 +232,28 @@ const login = async (req, res) => {
         userId: user._id,
       });
     }
-    generateToken(user, res);
+
+   
+    // IP + UA + session management
+    const ip = getIp(req);
+    const userAgent = req.headers["user-agent"] || "";
+    const ua = req.useragent.source;
+   // (Optional) Log info about the device
+   console.log("User is using:", {
+    platform: req.useragent.platform,
+    browser: req.useragent.browser,
+    version: req.useragent.version,
+    isMobile: req.useragent.isMobile,
+    isDesktop: req.useragent.isDesktop,
+    source: ua
+  });
+    // Manage or create session
+    const sessionId = await manageSession(user, ip, userAgent);
+
+    // Notify if IP unknown
+    // await sendVerificationIfUnknownIP(user, ip);
+
+    generateToken(user, sessionId, res);
 
     console.log(`${user.name} : Log in Success`);
 
@@ -237,6 +261,7 @@ const login = async (req, res) => {
       success: true,
       message: `${user.name} Logged-In successful.`,
       userId: user._id,
+      sessionId,
       // token:token
     });
   } catch (error) {
@@ -253,22 +278,21 @@ const login = async (req, res) => {
 };
 
 const me = async (req, res) => {
-  try { 
+  try {
     const myDetails = await User.findById(req.user.id).select(
       "-password -otp -otpExpiry -deleteAt -__v -lastLogin"
     );
 
     if (!myDetails) {
- 
       return errorResponse(res, 404, "User not found.");
     }
     res.status(200).json({
       success: true,
-      message: "Protected route accessed", 
+      ip: req.ip,
+      message: "Protected route accessed",
       user: myDetails,
     });
   } catch (error) {
-  
     errorResponse(res, 500, "Error retrieving user details", error);
   }
 };
@@ -278,8 +302,6 @@ const updateProfile = async (req, res) => {
     const { name, email, mobile, address, role } = req.body;
 
     if (!req.user.id) {
-     
-
       return errorResponse(res, 400, "User ID is required.");
     }
     // Update only provided fields
@@ -296,8 +318,6 @@ const updateProfile = async (req, res) => {
       { new: true, select: "-password -otp -otpExpiry -deleteAt -__v" }
     );
 
- 
-
     if (!updatedUser) {
       return errorResponse(res, 404, "User not found.");
     }
@@ -309,7 +329,7 @@ const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating user:", error);
-  
+
     errorResponse(
       res,
       500,
@@ -324,17 +344,15 @@ const updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     if (!req.user.id) {
- 
       return errorResponse(res, 400, "User ID is required.");
     }
- 
+
     const user = await User.findById(req.user.id).select("+password");
     if (!user) {
       return errorResponse(res, 404, "User not found.");
     }
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-    
       return errorResponse(res, 401, "Wrong Password");
     }
 
@@ -342,9 +360,8 @@ const updatePassword = async (req, res) => {
       newPassword,
       Number(process.env.HASH_ROUND)
     );
- 
+
     await User.updateOne({ _id: req.user.id }, { password: hashedPassword });
- 
 
     res.status(200).json({
       success: true,
@@ -352,7 +369,7 @@ const updatePassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating password", error);
-   
+
     errorResponse(
       res,
       500,
@@ -368,14 +385,11 @@ const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      
       return errorResponse(res, 400, "Please provide an email.");
     }
 
-    
     const user = await User.findOne({ email }).select("+otp +otpExpiry");
     if (!user) {
-     
       return errorResponse(res, 404, "User not found.");
     }
 
@@ -403,8 +417,6 @@ const forgotPassword = async (req, res) => {
   } catch (error) {
     console.error("Error:", error);
 
-    
-
     errorResponse(res, 500, "Internal Server Error.", error);
   }
 };
@@ -414,7 +426,6 @@ const resetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
     if (!email || !otp || !newPassword) {
-  
       return errorResponse(
         res,
         400,
@@ -425,18 +436,15 @@ const resetPassword = async (req, res) => {
     const user = await User.findOne({ email }).select("+otp +otpExpiry");
 
     if (!user) {
-     
       return errorResponse(res, 404, "User not found.");
     }
 
     if (!user.otp) {
-   
       return errorResponse(res, 404, "OTP not found, generate a new one.");
     }
 
     const isOtpValid = await bcrypt.compare(otp, user.otp);
     if (!isOtpValid || Date.now() > user.otpExpiry) {
-  
       return errorResponse(res, 401, "Invalid or expired OTP.");
     }
 
@@ -472,7 +480,7 @@ const resetPassword = async (req, res) => {
       });
   } catch (error) {
     console.error("Error:", error);
- 
+
     errorResponse(
       res,
       500,
@@ -497,10 +505,56 @@ const logOut = async (req, res) => {
       .json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     console.error("Logout Error:", error);
- 
+
     return errorResponse(res, 500, "Logout failed", error);
   }
 };
+
+// --
+
+// Controller to list all active sessions for the user
+const listSessions = async (req, res) => {
+  const sessions = req.user.sessions.map((s) => ({
+    sessionId: s.sessionId,
+    ip: s.ip,
+    userAgent: s.userAgent,
+    createdAt: s.createdAt,
+    lastUsed: s.lastUsed,
+  }));
+  res.status(200).json({ success: true, total: sessions.length, sessions });
+};
+
+// Controller to logout from a specific session
+const logoutSession = async (req, res) => {
+  const { sessionId } = req.params;
+  await User.updateOne(
+    { _id: req.user._id },
+    { $pull: { sessions: { sessionId } } }
+  );
+  // If it's the current session, also clear cookie
+  if (sessionId === req.sessionId) {
+    res.clearCookie("auth_token", {
+      httpOnly: true,
+      sameSite: "Strict",
+      path: "/",
+    });
+  }
+  res.status(200).json({ success: true, message: "Session removed." });
+};
+
+// Controller to logout from all sessions
+const logoutAll = async (req, res) => {
+  await User.updateOne({ _id: req.user._id }, { $set: { sessions: [] } });
+  res.clearCookie("auth_token", {
+    httpOnly: true,
+    sameSite: "Strict",
+    path: "/",
+  });
+  res
+    .status(200)
+    .json({ success: true, message: "Logged out from all sessions." });
+};
+// --
 
 export {
   signUp,
@@ -512,4 +566,7 @@ export {
   resetPassword,
   logOut,
   updatePassword,
+  listSessions,
+  logoutSession,
+  logoutAll,
 };

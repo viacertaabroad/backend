@@ -2,6 +2,9 @@ import User from "../models/users.js";
 import { oauth2client } from "../config/googleLoginCongif.js";
 import { generateToken } from "../utils/genToken.js";
 import axios from "axios";
+import crypto from "crypto";
+import getIp from "../utils/getIp.js";
+import manageSession from "../utils/manageSession.js";
 
 const googleLogin = async (req, res) => {
   try {
@@ -33,39 +36,36 @@ const googleLogin = async (req, res) => {
         isVerified: true,
       });
     } else {
-      if(!user.avatar){
-        user.avatar= picture
+      if (!user.avatar) {
+        user.avatar = picture;
       }
       user.isVerified = true;
-      user.lastLogin.by = 'google';
-      await user.save();
+      user.lastLogin.by = "google";
+      // await user.save();
     }
+    //---
+    // session logic
+    //  . Handle sessions
+    const ip = getIp(req);
+    const userAgent = req.headers["user-agent"] || "";
+    const ua = req.useragent.source;
+    
+    // (Optional) Log info about the device
+    console.log("User is using:", {
+     platform: req.useragent.platform,
+     browser: req.useragent.browser,
+     version: req.useragent.version,
+     isMobile: req.useragent.isMobile,
+     isDesktop: req.useragent.isDesktop,
+     source: ua
+   });
+    // Notify if IP unknown
+    // await sendVerificationIfUnknownIP(user, ip);
 
-    // Find or create user
-    // const user = await User.findOneAndUpdate(
-    //   { email },
-    //   {
-    //     $set: {
-    //       name,
-    //       avatar: picture,
-    //       isVerified: true,
-    //       lastLogin: new Date(),
-    //     },
-    //     $setOnInsert: {
-    //       // These fields only set if creating new user
-    //       email,
-    //       role: "user",
-    //       loginMethod: "google",
-    //     },
-    //   },
-    //   {
-    //     upsert: true,
-    //     new: true,
-    //     lean: true,
-    //   }
-    // );
+    // Manage/create session
+    const sessionId = await manageSession(user, ip, userAgent);
 
-    generateToken(user, res);
+    generateToken(user, sessionId, res);
 
     console.log(`Google login success - User: ${user.email}`);
 

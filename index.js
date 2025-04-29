@@ -4,28 +4,16 @@ import bodyParser from "body-parser";
 import connectToDb from "./config/dbConfig.js";
 import { createServer } from "http";
 import cors from "cors";
-// import socketFn from "./chatbot/socketConnector.js";
-import {
-  userRoutes,
-  blogRoutes,
-  coursesRoutes,
-  mbbsRoutes,
-  ourStudentsRoutes,
-  enquiryRoutes,
-  adminRoutes,
-  googleAuthRoute,
-  ticketRoutes,
-  sseRoute,
-} from "./helpers/indexRouteImports.js";
-import checkRoutes from "./routes/check.js";
+import routes from "./helpers/indexRouteImports.js";
 import cookieParser from "cookie-parser";
 import { authorizedRole, isAuthenticatedUser } from "./middleware/auth.js";
-
+import helmet from "helmet";
+import xssClean from "xss-clean";
+import mongoSanitize from "express-mongo-sanitize";
 import cluster from "cluster";
 import os from "os";
-// import process from "process";
-import whatsAppRoute from "./whatsapp/routes/whatsappRoutes.js";
 import { initializeWhatsappSocket } from "./whatsapp/utils/socketHandler.js";
+
 import { isRedisConnected, redis } from "./config/redisConfig.js";
 import { initChatbot } from "./chatbot/index.js";
 cluster.schedulingPolicy = cluster.SCHED_RR; // Set round-robin scheduling policy
@@ -62,23 +50,30 @@ const port = process.env.PORT || 8000;
 //     console.log("Master process is shutting down...");
 //     process.exit(0); // Exit master process
 //   });
-// } 
+// }
 // else {
 // Worker process logic
 connectToDb(); // Database connection for each worker
 
 const app = express();
+app.set("trust proxy", "loopback");
+// app.set('trust proxy', true);
+app.disable("x-powered-by");
+
 const server = createServer(app);
 
 // Initialize separate WhatsApp socket.io
-const whatsappIo = initializeWhatsappSocket(server);
-
+initializeWhatsappSocket(server);
 // socketFn(server); // Set up socket for communication in chatBot-Room
 initChatbot(server);
 
 app.use(
   cors({
-    origin: ["https://viacerta-abroad.onrender.com", "http://localhost:3000"],
+    origin: [
+      "https://viacerta-abroad.onrender.com",
+      "http://localhost:3000",
+      "https://vps-domain.com",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
@@ -86,39 +81,79 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.disable("x-powered-by");
 
-// Routes
-app.use("/check",checkRoutes);
-app.use("/api/whatsapp", whatsAppRoute);
-app.use("/events", sseRoute);
-app.use("/auth", googleAuthRoute);
+app.use(helmet()); //Set Secure HTTP Headers
+app.use(helmet.hidePoweredBy()); // Hide "X-Powered-By" header for all
+
+app.use(xssClean()); //Prevent XSS attacks
+app.use(mongoSanitize()); //  Prevent NoSQL Injection attacks
+app.use((req, res, next) => {
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  next(); // Enable browser-based XSS protection
+}); // Set Content Security Policy (CSP)
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      // ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      defaultSrc: ["'self'"], // Allow resources from the same origin
+      scriptSrc: ["'self'", "https://trusted-cdn.com"], // Allow scripts from trusted sources
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (be careful with this)
+      imgSrc: ["'self'", "data:"], // Allow images from the same origin and data URIs
+      fontSrc: ["'self'"], // Allow fonts from the same origin
+      objectSrc: ["'none'"], // Prevent Flash or other plugin-based content
+      upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS
+      blockAllMixedContent: ["'block'"], // Block all mixed content (HTTP content loaded on HTTPS pages)
+    },
+  })
+);
+// app.use((req, res, next) => {
+//   console.log('Headers',req.headers);  // Check if the "X-Powered-By" header exists
+//   next();
+// });
+////////// Routes
+app.use("/check", routes.checkRoutes);
+app.use("/api/whatsapp", routes.whatsAppRoute);
+app.use("/events", routes.sseRoute);
+app.use("/auth", routes.googleAuthRoute);
 // /////////////////////////
 // All   API routes
 
-app.use("/api/user", userRoutes);
-app.use("/api/blogs", blogRoutes);
-app.use("/api/courses", coursesRoutes);
-app.use("/api/campaign", mbbsRoutes);
-app.use("/api/ourStudents", ourStudentsRoutes);
-app.use("/api/enquiry", enquiryRoutes);
+app.use("/api/user", routes.userRoutes);
+app.use("/api/blogs", routes.blogRoutes);
+app.use("/api/courses", routes.coursesRoutes);
+app.use("/api/campaign", routes.mbbsRoutes);
+app.use("/api/ourStudents", routes.ourStudentsRoutes);
+app.use("/api/enquiry", routes.enquiryRoutes);
 app.use(
   "/api/admin",
   isAuthenticatedUser,
   authorizedRole(["admin"]),
-  adminRoutes
+  routes.adminRoutes
 );
-app.use("/api/tickets", ticketRoutes);
+app.use("/api/tickets", routes.ticketRoutes);
+
+app.post("/report-csp-violation", (req, res) => {
+  console.log("CSP Violation Report:", req.body);
+  // mail it or whatspp or excel save
+  res.status(204).send(); // Respond with no content on violation
+});
+
 // ------------
 
 server.listen(port, (req, res) => {
-  console.log(`🚀 Server is running on port: ${port} and process pid : ${process.pid}`);
-  
+  console.log(
+    `🚀 Server is running on port: ${port} and process pid : ${process.pid}`
+  );
+
   // Verify Redis connection after startup
-  redis.ping()
-    .then(() => { 
-      console.log("🎟️  isRedisConnection status ? : ", isRedisConnected());})
+  redis
+    .ping()
+    .then(() => {
+      console.log("🎟️  isRedisConnection status ? : ", isRedisConnected());
+    })
     .catch(() => console.log("⚠️ Redis not available"));
-  
+
   // console.log(`🚀 Worker ${process.pid} running on port: ${port}`);
 });
 

@@ -7,10 +7,14 @@ import enquiryRoutes from "../routes/enquiryRoute.js";
 import adminRoutes from "../routes/adminRoute.js";
 import googleAuthRoute from "../routes/googleAuthRoute.js";
 import ticketRoutes from "../routes/ticketRoute.js";
-
+import checkRoutes from "../routes/check.js";
+// -- 
 import sseRoute from "../routes/serverSideEventsRoute.js"
+import whatsAppRoute from "../whatsapp/routes/whatsappRoutes.js";
 
-export {
+
+export default{
+  checkRoutes,
   userRoutes,
   blogRoutes,
   coursesRoutes,
@@ -20,5 +24,6 @@ export {
   adminRoutes,
   googleAuthRoute,
   ticketRoutes,
-  sseRoute
+  sseRoute,
+  whatsAppRoute
 };

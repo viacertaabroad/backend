@@ -99,6 +99,7 @@ export default function Home() {
           Login with Google Page
         </a>
       </div>
+      <Link to="/xss">go to : Xss Page</Link>
     </div>
   );
 }

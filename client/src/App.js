@@ -13,6 +13,7 @@ import GoogleLogin from "./componenets/GoogleLogin";
 import Dashboard from "./componenets/Dashboard";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ToastContainer } from 'react-toastify';
+import Xss from "./componenets/Xss";
 function App() {
   const clientId = process.env.REACT_APP_CLIENT_ID;
   const GoogleAuthWrapper = () => {
@@ -35,6 +36,7 @@ function App() {
           <Route path="/login" element={<GoogleAuthWrapper />} />
           {/* <Route path="/" element={<Navigate to={"/login"} />} /> */}
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/xss" element={<Xss />} />
         </Routes>
       </Router>
     </div>

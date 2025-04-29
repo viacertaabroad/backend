@@ -20,7 +20,6 @@
   },
   "homepage": "https://github.com/viacertaabroad/backend#readme",
   "dependencies": {
-    "@xenova/transformers": "^2.17.2",
     "agenda": "^5.0.0",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
@@ -29,10 +28,12 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
-    "firebase-admin": "^13.2.0",
-    "fs": "^0.0.1-security",
+    "express-useragent": "^1.0.15",
     "googleapis": "^146.0.0",
+    "helmet": "^8.1.0",
     "htop": "^1.0.1",
     "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
@@ -46,6 +47,7 @@
     "passport-google-oauth20": "^2.0.0",
     "socket.io": "^4.8.1",
     "uuid": "^11.1.0",
-    "validator": "^13.12.0"
+    "validator": "^13.12.0",
+    "xss-clean": "^0.1.4"
   }
 }
