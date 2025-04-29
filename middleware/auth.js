@@ -35,8 +35,8 @@ export const isAuthenticatedUser = async (req, res, next) => {
 
       req.user = user; // Attach user to request
       req.userId = user._id; // Attach userId to request
-      // console.log("isAuthenticated",user);
       req.sessionId = jwtUser.sessionId;
+      // console.log("isAuthenticated",user);
     }
     next();
   } catch (error) {

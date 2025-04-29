@@ -4,8 +4,8 @@ import bcrypt from "bcryptjs";
 import { sendEmail } from "../utils/sendMail.js";
 import { generateToken } from "../utils/genToken.js";
 import errorResponse from "../helpers/errorHandler.js";
-import getIp from "../utils/getIp.js";
-import manageSession from "../utils/manageSession.js";
+
+import { manageSession } from "../utils/sessionUtils.js";
 
 const signUp = async (req, res) => {
   try {
@@ -132,18 +132,19 @@ const verify = async (req, res) => {
       }
     );
 
-    generateToken(user, res);
+    const sessionId = await manageSession(user, req);
+    generateToken(user, sessionId, res);
 
     return res.status(200).json({
       success: true,
       message: "OTP verified successfully.",
-      description: " User Signed Up and logged In.",
+      description: "User Signed Up and logged In.",
       user: {
         id: user._id,
         email: user.email,
         mobile: user.mobile,
         role: user.role,
-        isVerified: user.isVerified,
+        isVerified: true,
       },
     });
   } catch (error) {
@@ -232,27 +233,10 @@ const login = async (req, res) => {
         userId: user._id,
       });
     }
+    console.log("Client IP:", req.clientIp);
+    console.log("Device Info:", req.deviceInfo);
 
-   
-    // IP + UA + session management
-    const ip = getIp(req);
-    const userAgent = req.headers["user-agent"] || "";
-    const ua = req.useragent.source;
-   // (Optional) Log info about the device
-   console.log("User is using:", {
-    platform: req.useragent.platform,
-    browser: req.useragent.browser,
-    version: req.useragent.version,
-    isMobile: req.useragent.isMobile,
-    isDesktop: req.useragent.isDesktop,
-    source: ua
-  });
-    // Manage or create session
-    const sessionId = await manageSession(user, ip, userAgent);
-
-    // Notify if IP unknown
-    // await sendVerificationIfUnknownIP(user, ip);
-
+    const sessionId = await manageSession(user, req);
     generateToken(user, sessionId, res);
 
     console.log(`${user.name} : Log in Success`);
@@ -290,6 +274,7 @@ const me = async (req, res) => {
       success: true,
       ip: req.ip,
       message: "Protected route accessed",
+      sessionId: req.sessionId,
       user: myDetails,
     });
   } catch (error) {
@@ -346,6 +331,7 @@ const updatePassword = async (req, res) => {
     if (!req.user.id) {
       return errorResponse(res, 400, "User ID is required.");
     }
+    const sessionId = req.sessionId; // from  middleware
 
     const user = await User.findById(req.user.id).select("+password");
     if (!user) {
@@ -362,7 +348,11 @@ const updatePassword = async (req, res) => {
     );
 
     await User.updateOne({ _id: req.user.id }, { password: hashedPassword });
+    // 4) Remove ALL other sessions
+    user.sessions = user.sessions.filter((s) => s.sessionId === sessionId);
 
+    generateToken(user, sessionId, res);
+    await user.save();
     res.status(200).json({
       success: true,
       message: "Password changed successfully.",
@@ -461,7 +451,7 @@ const resetPassword = async (req, res) => {
     await User.updateOne(
       { _id: user._id },
       {
-        password: hashedPassword,
+        password: hashedPassword,sessions: [],
         $unset: { otp: "", otpExpiry: "" },
       }
     );
@@ -476,7 +466,7 @@ const resetPassword = async (req, res) => {
       .status(200)
       .json({
         success: true,
-        message: "Password reset successfully, Log in again with new Password.",
+        message: "Password reset successfully,All devices have been logged out—please log in again with your new password.",
       });
   } catch (error) {
     console.error("Error:", error);
@@ -518,6 +508,7 @@ const listSessions = async (req, res) => {
     sessionId: s.sessionId,
     ip: s.ip,
     userAgent: s.userAgent,
+    deviceInfo: s.deviceInfo,
     createdAt: s.createdAt,
     lastUsed: s.lastUsed,
   }));

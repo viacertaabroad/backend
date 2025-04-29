@@ -16,6 +16,7 @@ import { initializeWhatsappSocket } from "./whatsapp/utils/socketHandler.js";
 
 import { isRedisConnected, redis } from "./config/redisConfig.js";
 import { initChatbot } from "./chatbot/index.js";
+import { sessionMiddleware } from "./utils/sessionUtils.js";
 cluster.schedulingPolicy = cluster.SCHED_RR; // Set round-robin scheduling policy
 const numCPUs = os.cpus().length;
 const port = process.env.PORT || 8000;
@@ -119,7 +120,7 @@ app.use("/auth", routes.googleAuthRoute);
 // /////////////////////////
 // All   API routes
 
-app.use("/api/user", routes.userRoutes);
+app.use("/api/user", sessionMiddleware,routes.userRoutes);
 app.use("/api/blogs", routes.blogRoutes);
 app.use("/api/courses", routes.coursesRoutes);
 app.use("/api/campaign", routes.mbbsRoutes);
