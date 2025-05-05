@@ -36,6 +36,7 @@ const setCache = async (key, value, expiry = 60) => {
     return false;
   }
 };
+
 const removeCache = async (key) => {
   if (!isRedisConnected()) {
     console.warn("Redis not connected. Skipping cache removal.");

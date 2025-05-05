@@ -3,7 +3,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
+ 
 } from "react-router-dom";
 import Chat from "./componenets/Chat";
 import Support from "./componenets/Support";
@@ -14,6 +14,7 @@ import Dashboard from "./componenets/Dashboard";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ToastContainer } from 'react-toastify';
 import Xss from "./componenets/Xss";
+import Uploads from "./componenets/uploads/Uploads";
 function App() {
   const clientId = process.env.REACT_APP_CLIENT_ID;
   const GoogleAuthWrapper = () => {
@@ -37,6 +38,7 @@ function App() {
           {/* <Route path="/" element={<Navigate to={"/login"} />} /> */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/xss" element={<Xss />} />
+          <Route path="/upload" element={<Uploads />} />
         </Routes>
       </Router>
     </div>

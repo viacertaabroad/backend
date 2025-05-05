@@ -1,7 +1,9 @@
 import "dotenv/config";
 import express from "express";
 import bodyParser from "body-parser";
+import morgan from "morgan";
 import connectToDb from "./config/dbConfig.js";
+import path from 'path';
 import { createServer } from "http";
 import cors from "cors";
 import routes from "./helpers/indexRouteImports.js";
@@ -11,56 +13,24 @@ import helmet from "helmet";
 import xssClean from "xss-clean";
 import mongoSanitize from "express-mongo-sanitize";
 import cluster from "cluster";
-import os from "os";
+ 
 import { initializeWhatsappSocket } from "./whatsapp/utils/socketHandler.js";
-
 import { isRedisConnected, redis } from "./config/redisConfig.js";
 import { initChatbot } from "./chatbot/index.js";
 import { sessionMiddleware } from "./utils/sessionUtils.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 cluster.schedulingPolicy = cluster.SCHED_RR; // Set round-robin scheduling policy
-const numCPUs = os.cpus().length;
+ 
 const port = process.env.PORT || 8000;
-// console.log("number of CPUs: ", numCPUs);
-
-// if (cluster.isPrimary) {
-//   console.log(`🛠️ Master process ${process.pid} is running`);
-//   console.log(`Using scheduling policy: ${cluster.schedulingPolicy}`);
-
-//   for (let i = 0; i < 2  ; i++) {
-//     cluster.fork(); // Fork workers
-//   }
-
-//   cluster.on("exit", (worker) => {
-//     console.error(
-//       `⚠️ Worker ${worker.process.pid} crashed. Restarting in 3s...`
-//     );
-//     setTimeout(() => cluster.fork(), 3000); // Restart the worker after 3s
-//   });
-
-//   // Graceful shutdown for master process
-//   process.on("SIGTERM", () => {
-//     console.log(`❌ Master process ${process.pid} shutting down...`);
-//     // Killing workers gracefully
-//     for (const id in cluster.workers) {
-//       cluster.workers[id].kill();
-//     }
-//     process.exit(0); // Exit master process
-//   });
-
-//   process.on("SIGINT", () => {
-//     console.log("Master process is shutting down...");
-//     process.exit(0); // Exit master process
-//   });
-// }
-// else {
-// Worker process logic
-connectToDb(); // Database connection for each worker
+ 
+connectToDb();  
+const uploadsPath = path.join(process.cwd(), '..', 'uploads');
 
 const app = express();
 app.set("trust proxy", "loopback");
 // app.set('trust proxy', true);
 app.disable("x-powered-by");
-
+app.use(morgan("tiny"));
 const server = createServer(app);
 
 // Initialize separate WhatsApp socket.io
@@ -108,19 +78,30 @@ app.use(
     },
   })
 );
-// app.use((req, res, next) => {
-//   console.log('Headers',req.headers);  // Check if the "X-Powered-By" header exists
-//   next();
-// });
+
 ////////// Routes
 app.use("/check", routes.checkRoutes);
 app.use("/api/whatsapp", routes.whatsAppRoute);
 app.use("/events", routes.sseRoute);
 app.use("/auth", routes.googleAuthRoute);
 // /////////////////////////
+
+// Static file serving with caching and CORS headers
+app.use('/view', express.static(uploadsPath, {
+  maxAge: '1d', // Cache for one day
+  etag: true,    // Enable ETag for caching
+  setHeaders: (res, path) => {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000'); // Allow cross-origin requests
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+}));
+app.use('/api/upload', uploadRoutes); // this is for saving files
+
+
+// /////////////////////////
 // All   API routes
 
-app.use("/api/user", sessionMiddleware,routes.userRoutes);
+app.use("/api/user", sessionMiddleware, routes.userRoutes);
 app.use("/api/blogs", routes.blogRoutes);
 app.use("/api/courses", routes.coursesRoutes);
 app.use("/api/campaign", routes.mbbsRoutes);

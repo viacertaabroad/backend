@@ -100,6 +100,7 @@ export default function Home() {
         </a>
       </div>
       <Link to="/xss">go to : Xss Page</Link>
+      <Link to="/upload">go to : Upload test Page</Link>
     </div>
   );
 }
