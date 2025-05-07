@@ -1,7 +1,7 @@
-import { createUploader } from "../../utils/fileUploader.js";
+import { createSecureUploader } from "../../utils/fileUploader.js";
  
 export const uploadProfilePicture = (req, res) => {
-  const upload = createUploader  ({
+  const upload = createSecureUploader  ({
     folder: 'users/profile',
     allowedTypes: ['image/jpeg', 'image/png'],
     maxSize: 2 * 1024 * 1024, // 2MB
@@ -23,7 +23,7 @@ export const uploadProfilePicture = (req, res) => {
 };
 
 export const uploadDocuments = (req, res) => {
-  const upload = createUploader({
+  const upload = createSecureUploader({
     folder: 'users/docs',
     allowedTypes: ['application/pdf'],
     maxSize: 5 * 1024 * 1024, // 5MB
@@ -43,7 +43,7 @@ export const uploadDocuments = (req, res) => {
 
 
 export const uploadMixedFiles = (req, res) => {
-  const upload = createUploader({
+  const upload = createSecureUploader({
     folder: 'mixed',
     allowedTypes: ['image/jpeg', 'image/png', 'application/pdf'],
     maxSize: 5 * 1024 * 1024, // 5MB

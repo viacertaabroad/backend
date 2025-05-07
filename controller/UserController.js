@@ -6,6 +6,7 @@ import { generateToken } from "../utils/genToken.js";
 import errorResponse from "../helpers/errorHandler.js";
 
 import { manageSession } from "../utils/sessionUtils.js";
+import { queueEmail } from "../service/mailQueue/producer.js";
 
 const signUp = async (req, res) => {
   try {
@@ -400,6 +401,8 @@ const forgotPassword = async (req, res) => {
 
     const data = { email, otp, name: user.name };
     sendEmail(email, data, "passwordReset");
+    // await queueEmail(email, data, "passwordReset");
+
 
     res
       .status(200)

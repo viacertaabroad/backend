@@ -12,6 +12,7 @@ const ALLOWED_COUNTRIES = [
   "Romania",
   "Poland",
   "Greece",
+  "Italy",
 ];
 
 const mbbsCampaignSchema = new mongoose.Schema(

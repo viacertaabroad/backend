@@ -7,11 +7,16 @@ const redis = new Redis({
   db: 0,
   reconnectOnError: () => true,
   retryStrategy: (times) => {
-    const delay = Math.min(times * 50, 5000);
+    if (times > 20) { // After 20 retries, give up
+      return null;
+    }
+    const delay = Math.min(times * 100, 5000); // Start with 100ms, max 5s 
     console.log(`♻️ Redis reconnecting in ${delay}ms`);
     return delay;
   },
-  maxRetriesPerRequest: 1,
+  // maxRetriesPerRequest: 1,
+  maxRetriesPerRequest: null,
+
 });
 
 let _isRedisConnected = false;

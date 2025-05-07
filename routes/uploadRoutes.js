@@ -4,7 +4,7 @@ import { uploadDocuments, uploadMixedFiles, uploadProfilePicture } from '../cont
  
 
 const router = express.Router();
-
+// add auth later for upload route
 router.post('/profile', uploadProfilePicture);
 router.post('/documents', uploadDocuments);
 router.post('/mixed', uploadMixedFiles);

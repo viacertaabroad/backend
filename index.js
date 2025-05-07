@@ -18,6 +18,8 @@ import { initializeWhatsappSocket } from "./whatsapp/utils/socketHandler.js";
 import { isRedisConnected, redis } from "./config/redisConfig.js";
 import { initChatbot } from "./chatbot/index.js";
 import { sessionMiddleware } from "./utils/sessionUtils.js";
+import  "./service/mailQueue/index.js"
+ 
 import uploadRoutes from "./routes/uploadRoutes.js";
 cluster.schedulingPolicy = cluster.SCHED_RR; // Set round-robin scheduling policy
  
@@ -33,9 +35,8 @@ app.disable("x-powered-by");
 app.use(morgan("tiny"));
 const server = createServer(app);
 
-// Initialize separate WhatsApp socket.io
 initializeWhatsappSocket(server);
-// socketFn(server); // Set up socket for communication in chatBot-Room
+
 initChatbot(server);
 
 app.use(
@@ -95,7 +96,7 @@ app.use('/view', express.static(uploadsPath, {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
 }));
-app.use('/api/upload', uploadRoutes); // this is for saving files
+app.use('/api/upload', uploadRoutes); // this is for saving/upload files
 
 
 // /////////////////////////

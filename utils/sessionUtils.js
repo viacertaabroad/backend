@@ -1,9 +1,7 @@
 import crypto from "crypto";
 import useragent from "express-useragent"; // for .parse()
 
-/**
- * Safely extract client IP as a string.
- */
+/**  Safely extract client IP as a string. */
 export function getIp(req) {
   const fwd = req.headers["x-forwarded-for"];
   if (fwd) {
@@ -16,9 +14,7 @@ export function getIp(req) {
     || "unknown";
 }
 
-/**
- * Build a consistent deviceInfo object.
- */
+/** * Build a consistent deviceInfo object. */
 export function getDeviceInfo(req) {
   const ua = req.useragent || {};
   return {
@@ -39,9 +35,8 @@ export function getDeviceInfo(req) {
  */
 export function sessionMiddleware(req, res, next) {
   // parse UA into req.useragent
-  req.useragent  = useragent.parse(req.headers["user-agent"] || "");
-  // extract only the IP string
-  req.clientIp   = getIp(req);
+  req.useragent  = useragent.parse(req.headers["user-agent"] || ""); 
+  req.clientIp   = getIp(req);// extract only the IP string
   req.deviceInfo = getDeviceInfo(req);
   next();
 }
@@ -52,7 +47,7 @@ export function sessionMiddleware(req, res, next) {
  */
 export async function manageSession(user, req) {
   const now        = new Date();
-  const ip         = req.clientIp;      // guaranteed to be a string
+  const ip         = req.clientIp;  //   to be a string
   const deviceInfo = req.deviceInfo;
 
   // Find existing by ip + UA string
@@ -69,7 +64,7 @@ export async function manageSession(user, req) {
     sessionId = crypto.randomUUID();
     user.sessions.push({
       sessionId,
-      ip,                        // <— this is a string
+      ip,                        
       userAgent: deviceInfo.source,  
       deviceInfo,
       createdAt: now,
