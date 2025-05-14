@@ -7,7 +7,7 @@ const getBlogs = async (req, res) => {
       .lean()
       .select("title intro author image country date headline")
       .sort({ createdAt: -1 }); // Newest first
-
+ 
     if (allBlogs.length === 0) {
      
       return errorResponse(res, 200, "No blogs found", error);

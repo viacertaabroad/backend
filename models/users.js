@@ -1,13 +1,20 @@
 import mongoose, { Schema } from "mongoose";
 import validator from "validator";
 
-const sessionSchema = new mongoose.Schema({
+const logInSessionSchema = new mongoose.Schema({
   sessionId: { type: String, required: true },
   ip: { type: String },
   userAgent: { type: String },
   deviceInfo: { type: Object },
   createdAt: { type: Date, default: Date.now },
   lastUsed: { type: Date, default: Date.now },
+});
+const preferenceSchema = new mongoose.Schema({
+  serviceEmail: { type: Boolean, default: false },
+  newsTeller: { type: Boolean, default: false },
+  specialOffers: { type: Boolean, default: false },
+  eduNews: { type: Boolean, default: false },
+  importantUpdates: { type: Boolean, default: false }
 });
 
 const userSchema = new mongoose.Schema(
@@ -50,12 +57,18 @@ const userSchema = new mongoose.Schema(
       //   },
       //   message: "Phone number must be 10 digits",
       // },
-    },
+    }, 
+    dateOfbirth: { type: Date },
+    gender: { type: String }, 
+    languages: { type: [String], default: [] },  
+    notifications: { type: preferenceSchema, default: () => ({}) },
+
     address: {
       pinCode: { type: String },
       city: { type: String },
       state: { type: String },
       country: { type: String },
+      default: {},
     },
     role: {
       type: String,
@@ -95,10 +108,10 @@ const userSchema = new mongoose.Schema(
       },
       date: {
         type: Date,
-        default: Date.now,
+        // default: Date.now,
       },
     },
-    sessions: [sessionSchema],
+    loggedInSessions: [logInSessionSchema],
     accountStatus: {
       type: String,
       enum: ["active", "banned", "suspended"],

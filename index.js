@@ -12,16 +12,15 @@ import { authorizedRole, isAuthenticatedUser } from "./middleware/auth.js";
 import helmet from "helmet";
 import xssClean from "xss-clean";
 import mongoSanitize from "express-mongo-sanitize";
-import cluster from "cluster";
+import expressStatusMonitor from "express-status-monitor";
  
-import { initializeWhatsappSocket } from "./whatsapp/utils/socketHandler.js";
+// import { initializeWhatsappSocket } from "./whatsapp/utils/socketHandler.js";
 import { isRedisConnected, redis } from "./config/redisConfig.js";
 import { initChatbot } from "./chatbot/index.js";
 import { sessionMiddleware } from "./utils/sessionUtils.js";
 import  "./service/mailQueue/index.js"
- 
 import uploadRoutes from "./routes/uploadRoutes.js";
-cluster.schedulingPolicy = cluster.SCHED_RR; // Set round-robin scheduling policy
+
  
 const port = process.env.PORT || 8000;
  
@@ -29,14 +28,14 @@ connectToDb();
 const uploadsPath = path.join(process.cwd(), '..', 'uploads');
 
 const app = express();
-app.set("trust proxy", "loopback");
+// app.set("trust proxy", "loopback");
 // app.set('trust proxy', true);
-app.disable("x-powered-by");
+// app.disable("x-powered-by");
+app.use(expressStatusMonitor());
 app.use(morgan("tiny"));
 const server = createServer(app);
 
-initializeWhatsappSocket(server);
-
+// initializeWhatsappSocket(server);
 initChatbot(server);
 
 app.use(
@@ -53,32 +52,32 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.disable("x-powered-by");
+// app.disable("x-powered-by");
 
-app.use(helmet()); //Set Secure HTTP Headers
-app.use(helmet.hidePoweredBy()); // Hide "X-Powered-By" header for all
+// app.use(helmet()); //Set Secure HTTP Headers
+// app.use(helmet.hidePoweredBy()); // Hide "X-Powered-By" header for all
 
-app.use(xssClean()); //Prevent XSS attacks
-app.use(mongoSanitize()); //  Prevent NoSQL Injection attacks
+// app.use(xssClean()); //Prevent XSS attacks
+// app.use(mongoSanitize()); //  Prevent NoSQL Injection attacks
 app.use((req, res, next) => {
   res.setHeader("X-XSS-Protection", "1; mode=block");
   next(); // Enable browser-based XSS protection
 }); // Set Content Security Policy (CSP)
-app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      // ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      defaultSrc: ["'self'"], // Allow resources from the same origin
-      scriptSrc: ["'self'", "https://trusted-cdn.com"], // Allow scripts from trusted sources
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (be careful with this)
-      imgSrc: ["'self'", "data:"], // Allow images from the same origin and data URIs
-      fontSrc: ["'self'"], // Allow fonts from the same origin
-      objectSrc: ["'none'"], // Prevent Flash or other plugin-based content
-      upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS
-      blockAllMixedContent: ["'block'"], // Block all mixed content (HTTP content loaded on HTTPS pages)
-    },
-  })
-);
+// app.use(
+//   helmet.contentSecurityPolicy({
+//     directives: {
+//       // ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+//       defaultSrc: ["'self'"], // Allow resources from the same origin
+//       scriptSrc: ["'self'", "https://trusted-cdn.com"], // Allow scripts from trusted sources
+//       styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (be careful with this)
+//       imgSrc: ["'self'", "data:"], // Allow images from the same origin and data URIs
+//       fontSrc: ["'self'"], // Allow fonts from the same origin
+//       objectSrc: ["'none'"], // Prevent Flash or other plugin-based content
+//       upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS
+//       blockAllMixedContent: ["'block'"], // Block all mixed content (HTTP content loaded on HTTPS pages)
+//     },
+//   })
+// );
 
 ////////// Routes
 app.use("/check", routes.checkRoutes);
@@ -88,14 +87,14 @@ app.use("/auth", routes.googleAuthRoute);
 // /////////////////////////
 
 // Static file serving with caching and CORS headers
-app.use('/view', express.static(uploadsPath, {
-  maxAge: '1d', // Cache for one day
-  etag: true,    // Enable ETag for caching
-  setHeaders: (res, path) => {
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000'); // Allow cross-origin requests
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-}));
+// app.use('/view', express.static(uploadsPath, {
+//   maxAge: '1d', // Cache for one day
+//   etag: true,    // Enable ETag for caching
+//   setHeaders: (res, path) => {
+//     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000'); // Allow cross-origin requests
+//     res.setHeader('Access-Control-Allow-Credentials', 'true');
+//   }
+// }));
 app.use('/api/upload', uploadRoutes); // this is for saving/upload files
 
 
@@ -106,10 +105,12 @@ app.use("/api/user", sessionMiddleware, routes.userRoutes);
 app.use("/api/blogs", routes.blogRoutes);
 app.use("/api/courses", routes.coursesRoutes);
 app.use("/api/campaign", routes.mbbsRoutes);
+app.use("/api/mbbs", routes.mbbsCountries);
 app.use("/api/ourStudents", routes.ourStudentsRoutes);
 app.use("/api/enquiry", routes.enquiryRoutes);
 app.use(
   "/api/admin",
+  // sessionMiddleware,
   isAuthenticatedUser,
   authorizedRole(["admin"]),
   routes.adminRoutes

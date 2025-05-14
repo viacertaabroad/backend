@@ -5,7 +5,7 @@ const getCache = async (key) => {
   if (!isRedisConnected()) return null;
   
   try {
-    const data = await redis .get(key);
+    const data = await redis.get(key);
     return data ? JSON.parse(data) : null;
   } catch (err) {
       // Only log unexpected errors (not connection errors)

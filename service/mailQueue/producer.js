@@ -10,4 +10,4 @@ export const queueEmail = async (to, data, emailType) => {
       removeOnComplete: true,
       attempts: 3, // retry on failure
     });
-  };
+ };

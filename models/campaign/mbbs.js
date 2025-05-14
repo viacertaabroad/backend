@@ -3,16 +3,17 @@ import validator from "validator";
 
 const ALLOWED_COUNTRIES = [
   "Russia",
+  "Georgia",
+  "Poland",
+  "Uzbekistan",
   "Kazakhstan",
   "Kyrgyzstan",
   "Philippines",
-  "Uzbekistan",
-  "Georgia",
   "Serbia",
   "Romania",
-  "Poland",
   "Greece",
   "Italy",
+  "Armenia",
 ];
 
 const mbbsCampaignSchema = new mongoose.Schema(
@@ -179,7 +180,6 @@ const mbbsCampaignSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 const MBBS_InterestedUser = mongoose.model("campaign_mbbs", mbbsCampaignSchema);
 
 export default MBBS_InterestedUser;

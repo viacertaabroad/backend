@@ -14,8 +14,8 @@ const redis = new Redis({
     console.log(`♻️ Redis reconnecting in ${delay}ms`);
     return delay;
   },
-  // maxRetriesPerRequest: 1,
-  maxRetriesPerRequest: null,
+  maxRetriesPerRequest: 1,
+  // maxRetriesPerRequest: null,
 
 });
 

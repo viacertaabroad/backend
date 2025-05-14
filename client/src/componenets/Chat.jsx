@@ -34,6 +34,10 @@ function Chat() {
     const socket = io("http://localhost:8000", { autoConnect: false });
     socketRef.current = socket;
     socket.connect();
+    
+    socket.on("connect", () => {
+      console.log("User Connected Socket id:", socket.id);
+    });
 
     // update connected-users badge if you ever show it
     socket.on("user_count_update", ({ count }) => {

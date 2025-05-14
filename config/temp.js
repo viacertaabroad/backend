@@ -7,7 +7,7 @@ const baseRedisConfig = {
   password: process.env.REDIS_PASSWORD || undefined,
   enableOfflineQueue: true,
 };
-
+ 
 // Standard Redis Client (for normal cache operations)
 const redis = new Redis({
   ...baseRedisConfig,
@@ -148,3 +148,6 @@ export {
   connectionStatus,
   shutdownRedis
 };
+
+
+

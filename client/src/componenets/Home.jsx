@@ -87,6 +87,7 @@ export default function Home() {
   return (
     <div className="home">
       <h1>Home App</h1>
+      
       <div>
         <Link to="/chat">Chat</Link>
         <br />
